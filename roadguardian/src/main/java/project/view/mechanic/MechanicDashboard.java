@@ -1,4 +1,4 @@
-package project.ui.mechanic;
+package project.view.mechanic;
 
 public class MechanicDashboard {
     

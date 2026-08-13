@@ -1,4 +1,4 @@
-package project.ui.user;
+package project.view.user;
 
 public class UserDashboard {
     
