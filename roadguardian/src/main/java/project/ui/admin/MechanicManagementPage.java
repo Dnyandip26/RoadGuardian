@@ -4,10 +4,11 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Cursor;
 import javafx.scene.control.*;
-import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 
@@ -17,6 +18,8 @@ import project.controller.admin.MechanicController;
 import project.firebase.FirebaseConfig;
 import project.model.Mechanic;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 public class MechanicManagementPage extends AdminSectionPage {
@@ -42,15 +45,26 @@ public class MechanicManagementPage extends AdminSectionPage {
     private static final String BORDER = "#B8D4D9";
 
     // =========================================================
-    // FIELDS
+    // DATA
     // =========================================================
 
     private MechanicController controller;
 
-    private TableView<Mechanic> mechanicTable;
-
     private final ObservableList<Mechanic> mechanicList =
             FXCollections.observableArrayList();
+
+    private final List<Mechanic> allMechanics =
+            new ArrayList<>();
+
+    // =========================================================
+    // CONTROLS
+    // =========================================================
+
+    private VBox mechanicCards;
+    private TextField searchField;
+    private ComboBox<String> statusFilter;
+    private ComboBox<String> sortFilter;
+    private Label resultCountLabel;
 
     private Label totalLabel;
     private Label activeLabel;
@@ -63,66 +77,31 @@ public class MechanicManagementPage extends AdminSectionPage {
     @Override
     public VBox getView() {
 
-        VBox root =
-                new VBox(22);
-
-        root.setPadding(
-                new Insets(
-                        30,
-                        32,
-                        32,
-                        32
-                )
-        );
-
-        root.setStyle(
-                "-fx-background-color: " +
-                BG +
-                ";"
-        );
+        VBox root = new VBox(22);
+        root.setPadding(new Insets(30, 32, 32, 32));
+        root.setStyle("-fx-background-color: " + BG + ";");
 
         try {
-
-            Firestore firestore =
-                    FirebaseConfig.getFirestore();
-
-            controller =
-                    new MechanicController(
-                            firestore
-                    );
-
+            Firestore firestore = FirebaseConfig.getFirestore();
+            controller = new MechanicController(firestore);
         } catch (Exception e) {
-
             e.printStackTrace();
-
-            return createErrorView(
-                    "Unable to connect to Firestore."
-            );
+            return createErrorView("Unable to connect to Firestore.");
         }
 
-        VBox header =
-                createHeader();
-
-        HBox statistics =
-                createStatistics();
-
-        HBox toolbar =
-                createToolbar();
-
-        VBox tableCard =
-                createTableCard();
+        VBox header = createHeader();
+        HBox statistics = createStatistics();
+        HBox toolbar = createToolbar();
+        VBox recordsCard = createMechanicRecordsCard();
 
         root.getChildren().addAll(
                 header,
                 statistics,
                 toolbar,
-                tableCard
+                recordsCard
         );
 
-        VBox.setVgrow(
-                tableCard,
-                Priority.ALWAYS
-        );
+        VBox.setVgrow(recordsCard, Priority.ALWAYS);
 
         loadMechanics();
 
@@ -135,46 +114,19 @@ public class MechanicManagementPage extends AdminSectionPage {
 
     private VBox createHeader() {
 
-        VBox header =
-                new VBox(7);
+        VBox header = new VBox(7);
 
-        Label title =
-                new Label(
-                        "Mechanics"
-                );
+        Label title = new Label("Mechanics");
+        title.setTextFill(Color.web(HEADING));
+        title.setFont(Font.font("Arial", FontWeight.BOLD, 32));
 
-        title.setTextFill(
-                Color.web(HEADING)
+        Label subtitle = new Label(
+                "Manage RoadGuardian mechanics and their service availability."
         );
+        subtitle.setTextFill(Color.web(TEXT));
+        subtitle.setFont(Font.font("Arial", 16));
 
-        title.setFont(
-                Font.font(
-                        "Arial",
-                        FontWeight.BOLD,
-                        32
-                )
-        );
-
-        Label subtitle =
-                new Label(
-                        "Manage RoadGuardian mechanics and their service availability."
-                );
-
-        subtitle.setTextFill(
-                Color.web(TEXT)
-        );
-
-        subtitle.setFont(
-                Font.font(
-                        "Arial",
-                        16
-                )
-        );
-
-        header.getChildren().addAll(
-                title,
-                subtitle
-        );
+        header.getChildren().addAll(title, subtitle);
 
         return header;
     }
@@ -185,95 +137,50 @@ public class MechanicManagementPage extends AdminSectionPage {
 
     private HBox createStatistics() {
 
-        HBox box =
-                new HBox(16);
+        HBox box = new HBox(16);
 
-        totalLabel =
-                createValueLabel(
-                        BLUE
-                );
+        totalLabel = createValueLabel(BLUE);
+        activeLabel = createValueLabel(GREEN);
+        inactiveLabel = createValueLabel(RED);
 
-        activeLabel =
-                createValueLabel(
-                        GREEN
-                );
-
-        inactiveLabel =
-                createValueLabel(
-                        RED
-                );
-
-        VBox total =
-                createStatCard(
-                        "Total Mechanics",
-                        "All registered mechanics",
-                        totalLabel,
-                        BLUE,
-                        "TOTAL"
-                );
-
-        VBox active =
-                createStatCard(
-                        "Active Mechanics",
-                        "Currently available",
-                        activeLabel,
-                        GREEN,
-                        "ACTIVE"
-                );
-
-        VBox inactive =
-                createStatCard(
-                        "Inactive Mechanics",
-                        "Currently unavailable",
-                        inactiveLabel,
-                        RED,
-                        "INACTIVE"
-                );
-
-        HBox.setHgrow(
-                total,
-                Priority.ALWAYS
+        VBox total = createStatCard(
+                "Total Mechanics",
+                "All registered mechanics",
+                totalLabel,
+                BLUE,
+                "TOTAL"
         );
 
-        HBox.setHgrow(
-                active,
-                Priority.ALWAYS
+        VBox active = createStatCard(
+                "Active Mechanics",
+                "Currently available",
+                activeLabel,
+                GREEN,
+                "ACTIVE"
         );
 
-        HBox.setHgrow(
-                inactive,
-                Priority.ALWAYS
+        VBox inactive = createStatCard(
+                "Inactive Mechanics",
+                "Currently unavailable",
+                inactiveLabel,
+                RED,
+                "INACTIVE"
         );
 
-        box.getChildren().addAll(
-                total,
-                active,
-                inactive
-        );
+        HBox.setHgrow(total, Priority.ALWAYS);
+        HBox.setHgrow(active, Priority.ALWAYS);
+        HBox.setHgrow(inactive, Priority.ALWAYS);
+
+        box.getChildren().addAll(total, active, inactive);
 
         return box;
     }
 
-    private Label createValueLabel(
-            String color
-    ) {
+    private Label createValueLabel(String color) {
 
-        Label label =
-                new Label(
-                        "0"
-                );
-
-        label.setTextFill(
-                Color.web(color)
-        );
-
-        label.setFont(
-                Font.font(
-                        "Arial",
-                        FontWeight.BOLD,
-                        30
-                )
-        );
+        Label label = new Label("0");
+        label.setTextFill(Color.web(color));
+        label.setFont(Font.font("Arial", FontWeight.BOLD, 30));
 
         return label;
     }
@@ -286,125 +193,62 @@ public class MechanicManagementPage extends AdminSectionPage {
             String tagText
     ) {
 
-        VBox card =
-                new VBox(9);
+        VBox card = new VBox(9);
+        card.setPadding(new Insets(20, 22, 18, 22));
+        card.setMinHeight(130);
 
-        card.setPadding(
-                new Insets(
-                        20,
-                        22,
-                        18,
-                        22
-                )
-        );
-
-        card.setMinHeight(
-                130
-        );
-
-        card.setStyle(
-                "-fx-background-color: " +
-                SURFACE +
-                ";" +
-                "-fx-border-color: " +
-                BORDER +
-                ";" +
+        String normalStyle =
+                "-fx-background-color: " + SURFACE + ";" +
+                "-fx-border-color: " + BORDER + ";" +
                 "-fx-border-radius: 14;" +
-                "-fx-background-radius: 14;"
-        );
+                "-fx-background-radius: 14;";
 
-        HBox top =
-                new HBox();
+        String hoverStyle =
+                "-fx-background-color: #F7FCFC;" +
+                "-fx-border-color: " + color + ";" +
+                "-fx-border-radius: 14;" +
+                "-fx-background-radius: 14;" +
+                "-fx-effect: dropshadow(gaussian, rgba(37,99,235,0.12), 10, 0.12, 0, 2);";
 
-        top.setAlignment(
-                Pos.CENTER_LEFT
-        );
+        card.setStyle(normalStyle);
+        card.setCursor(Cursor.HAND);
 
-        Label titleLabel =
-                new Label(
-                        title
-                );
+        HBox top = new HBox();
+        top.setAlignment(Pos.CENTER_LEFT);
 
-        titleLabel.setTextFill(
-                Color.web(HEADING)
-        );
+        Label titleLabel = new Label(title);
+        titleLabel.setTextFill(Color.web(HEADING));
+        titleLabel.setFont(Font.font("Arial", FontWeight.BOLD, 16));
 
-        titleLabel.setFont(
-                Font.font(
-                        "Arial",
-                        FontWeight.BOLD,
-                        16
-                )
-        );
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        Region spacer =
-                new Region();
-
-        HBox.setHgrow(
-                spacer,
-                Priority.ALWAYS
-        );
-
-        Label tag =
-                new Label(
-                        tagText
-                );
-
-        tag.setTextFill(
-                Color.web(color)
-        );
-
-        tag.setFont(
-                Font.font(
-                        "Arial",
-                        FontWeight.BOLD,
-                        12
-                )
-        );
-
-        tag.setPadding(
-                new Insets(
-                        6,
-                        10,
-                        6,
-                        10
-                )
-        );
-
+        Label tag = new Label(tagText);
+        tag.setTextFill(Color.web(color));
+        tag.setFont(Font.font("Arial", FontWeight.BOLD, 12));
+        tag.setPadding(new Insets(6, 10, 6, 10));
         tag.setStyle(
-                "-fx-background-color: " +
-                color +
-                "18;" +
+                "-fx-background-color: " + color + "18;" +
                 "-fx-background-radius: 20;"
         );
 
-        top.getChildren().addAll(
-                titleLabel,
-                spacer,
-                tag
-        );
+        top.getChildren().addAll(titleLabel, spacer, tag);
 
-        Label subtitleLabel =
-                new Label(
-                        subtitle
-                );
+        Label subtitleLabel = new Label(subtitle);
+        subtitleLabel.setTextFill(Color.web(TEXT));
+        subtitleLabel.setFont(Font.font("Arial", 14));
 
-        subtitleLabel.setTextFill(
-                Color.web(TEXT)
-        );
+        card.getChildren().addAll(top, value, subtitleLabel);
 
-        subtitleLabel.setFont(
-                Font.font(
-                        "Arial",
-                        14
-                )
-        );
+        card.setOnMouseEntered(event -> {
+            card.setStyle(hoverStyle);
+            card.setTranslateY(-2);
+        });
 
-        card.getChildren().addAll(
-                top,
-                value,
-                subtitleLabel
-        );
+        card.setOnMouseExited(event -> {
+            card.setStyle(normalStyle);
+            card.setTranslateY(0);
+        });
 
         return card;
     }
@@ -415,161 +259,71 @@ public class MechanicManagementPage extends AdminSectionPage {
 
     private HBox createToolbar() {
 
-        HBox toolbar =
-                new HBox(12);
+        HBox toolbar = new HBox(12);
+        toolbar.setAlignment(Pos.CENTER_LEFT);
 
-        toolbar.setAlignment(
-                Pos.CENTER_LEFT
-        );
-
-        TextField search =
-                new TextField();
-
-        search.setPromptText(
+        searchField = new TextField();
+        searchField.setPromptText(
                 "Search by name, email, phone, city or specialization..."
         );
+        searchField.setPrefWidth(410);
+        searchField.setPrefHeight(44);
+        styleTextField(searchField);
 
-        search.setPrefWidth(
-                420
-        );
-
-        search.setPrefHeight(
-                44
-        );
-
-        search.setStyle(
-                "-fx-background-color: " +
-                SURFACE +
-                ";" +
-                "-fx-text-fill: " +
-                HEADING +
-                ";" +
-                "-fx-prompt-text-fill: " +
-                TEXT +
-                ";" +
-                "-fx-border-color: " +
-                BORDER +
-                ";" +
-                "-fx-border-radius: 9;" +
-                "-fx-background-radius: 9;" +
-                "-fx-padding: 0 14 0 14;" +
-                "-fx-font-size: 16px;"
-        );
-
-        ComboBox<String> filter =
-                new ComboBox<>();
-
-        filter.getItems().addAll(
+        statusFilter = new ComboBox<>();
+        statusFilter.getItems().addAll(
                 "All",
                 "Active",
                 "Inactive"
         );
+        statusFilter.setValue("All");
+        statusFilter.setPrefWidth(120);
+        statusFilter.setPrefHeight(44);
+        styleComboBox(statusFilter);
 
-        filter.setValue(
-                "All"
+        sortFilter = new ComboBox<>();
+        sortFilter.getItems().addAll(
+                "Newest First",
+                "Oldest First",
+                "Name A-Z",
+                "Name Z-A",
+                "Experience High-Low",
+                "Experience Low-High"
+        );
+        sortFilter.setValue("Newest First");
+        sortFilter.setPrefWidth(160);
+        sortFilter.setPrefHeight(44);
+        styleComboBox(sortFilter);
+
+        Button refresh = createActionButton("Refresh", BLUE);
+        refresh.setPrefHeight(44);
+
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        Button add = createActionButton("+ Add Mechanic", ORANGE);
+        add.setPrefHeight(44);
+        add.setPadding(new Insets(0, 20, 0, 20));
+
+        searchField.textProperty().addListener(
+                (obs, oldValue, newValue) -> applyFilters()
         );
 
-        filter.setPrefWidth(
-                130
+        statusFilter.valueProperty().addListener(
+                (obs, oldValue, newValue) -> applyFilters()
         );
 
-        filter.setPrefHeight(
-                44
+        sortFilter.valueProperty().addListener(
+                (obs, oldValue, newValue) -> applyFilters()
         );
 
-        filter.setStyle(
-                "-fx-background-color: " +
-                SURFACE +
-                ";" +
-                "-fx-border-color: " +
-                BORDER +
-                ";" +
-                "-fx-border-radius: 9;" +
-                "-fx-background-radius: 9;" +
-                "-fx-font-size: 16px;"
-        );
-
-        Button refresh =
-                createActionButton(
-                        "Refresh",
-                        BLUE
-                );
-
-        refresh.setPrefHeight(
-                44
-        );
-
-        Region spacer =
-                new Region();
-
-        HBox.setHgrow(
-                spacer,
-                Priority.ALWAYS
-        );
-
-        Button add =
-                createActionButton(
-                        "+ Add Mechanic",
-                        ORANGE
-                );
-
-        add.setPrefHeight(
-                44
-        );
-
-        search.textProperty()
-                .addListener(
-                        (obs, oldValue, newValue) -> {
-
-                            if (
-                                    newValue == null ||
-                                    newValue.isBlank()
-                            ) {
-
-                                loadMechanics();
-
-                            } else {
-
-                                searchMechanics(
-                                        newValue.trim()
-                                );
-                            }
-                        }
-                );
-
-        filter.valueProperty()
-                .addListener(
-                        (obs, oldValue, newValue) -> {
-
-                            if (
-                                    newValue == null ||
-                                    newValue.equals("All")
-                            ) {
-
-                                loadMechanics();
-
-                            } else {
-
-                                filterMechanics(
-                                        newValue
-                                );
-                            }
-                        }
-                );
-
-        refresh.setOnAction(
-                event ->
-                        loadMechanics()
-        );
-
-        add.setOnAction(
-                event ->
-                        showAddDialog()
-        );
+        refresh.setOnAction(event -> loadMechanics());
+        add.setOnAction(event -> showAddDialog());
 
         toolbar.getChildren().addAll(
-                search,
-                filter,
+                searchField,
+                statusFilter,
+                sortFilter,
                 refresh,
                 spacer,
                 add
@@ -587,198 +341,93 @@ public class MechanicManagementPage extends AdminSectionPage {
             String color
     ) {
 
-        Button button =
-                new Button(
-                        text
-                );
+        Button button = new Button(text);
+        button.setTextFill(Color.WHITE);
+        button.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+        button.setPrefHeight(42);
+        button.setPadding(new Insets(0, 18, 0, 18));
+        button.setCursor(Cursor.HAND);
 
-        button.setTextFill(
-                Color.WHITE
-        );
+        setButtonStyle(button, color);
 
-        button.setFont(
-                Font.font(
-                        "Arial",
-                        FontWeight.BOLD,
-                        16
+        button.setOnMouseEntered(event ->
+                setButtonStyle(
+                        button,
+                        color.equals(ORANGE)
+                                ? ORANGE_HOVER
+                                : "#1D4ED8"
                 )
         );
 
-        button.setPrefHeight(
-                42
-        );
-
-        button.setPadding(
-                new Insets(
-                        0,
-                        18,
-                        0,
-                        18
-                )
-        );
-
-        button.setStyle(
-                "-fx-background-color: " +
-                color +
-                ";" +
-                "-fx-background-radius: 9;" +
-                "-fx-cursor: hand;"
-        );
-
-        button.setOnMouseEntered(
-                event -> {
-
-                    if (
-                            color.equals(
-                                    ORANGE
-                            )
-                    ) {
-
-                        button.setStyle(
-                                "-fx-background-color: " +
-                                ORANGE_HOVER +
-                                ";" +
-                                "-fx-background-radius: 9;" +
-                                "-fx-cursor: hand;"
-                        );
-
-                    } else {
-
-                        button.setStyle(
-                                "-fx-background-color: #1D4ED8;" +
-                                "-fx-background-radius: 9;" +
-                                "-fx-cursor: hand;"
-                        );
-                    }
-                }
-        );
-
-        button.setOnMouseExited(
-                event ->
-                        button.setStyle(
-                                "-fx-background-color: " +
-                                color +
-                                ";" +
-                                "-fx-background-radius: 9;" +
-                                "-fx-cursor: hand;"
-                        )
+        button.setOnMouseExited(event ->
+                setButtonStyle(button, color)
         );
 
         return button;
     }
 
-    // =========================================================
-    // TABLE CARD
-    // =========================================================
+    private void setButtonStyle(Button button, String color) {
 
-    private VBox createTableCard() {
-
-        VBox card =
-                new VBox(15);
-
-        card.setPadding(
-                new Insets(
-                        21
-                )
+        button.setStyle(
+                "-fx-background-color: " + color + ";" +
+                "-fx-background-radius: 9;" +
+                "-fx-cursor: hand;"
         );
+    }
+
+    // =========================================================
+    // RECORDS CARD
+    // =========================================================
+
+    private VBox createMechanicRecordsCard() {
+
+        VBox card = new VBox(15);
+        card.setPadding(new Insets(21));
+        card.setMinHeight(430);
 
         card.setStyle(
-                "-fx-background-color: " +
-                SURFACE +
-                ";" +
-                "-fx-border-color: " +
-                BORDER +
-                ";" +
+                "-fx-background-color: " + SURFACE + ";" +
+                "-fx-border-color: " + BORDER + ";" +
                 "-fx-border-radius: 14;" +
                 "-fx-background-radius: 14;"
         );
 
-        HBox header =
-                new HBox();
+        HBox header = new HBox();
+        header.setAlignment(Pos.CENTER_LEFT);
 
-        header.setAlignment(
-                Pos.CENTER_LEFT
+        VBox headingBox = new VBox(4);
+
+        Label heading = new Label("Mechanic Information");
+        heading.setTextFill(Color.web(HEADING));
+        heading.setFont(Font.font("Arial", FontWeight.BOLD, 20));
+
+        Label subtitle = new Label(
+                "Registered mechanics, skills and current service availability"
         );
+        subtitle.setTextFill(Color.web(TEXT));
+        subtitle.setFont(Font.font("Arial", 14));
 
-        VBox headingBox =
-                new VBox(4);
-
-        Label heading =
-                new Label(
-                        "Mechanic Records"
-                );
-
-        heading.setTextFill(
-                Color.web(HEADING)
-        );
-
-        heading.setFont(
-                Font.font(
-                        "Arial",
-                        FontWeight.BOLD,
-                        20
-                )
-        );
-
-        Label subtitle =
-                new Label(
-                        "Registered mechanics and their current service status"
-                );
-
-        subtitle.setTextFill(
-                Color.web(TEXT)
-        );
-
-        subtitle.setFont(
-                Font.font(
-                        "Arial",
-                        14
-                )
+        resultCountLabel = new Label("0 mechanics");
+        resultCountLabel.setTextFill(Color.web(BLUE));
+        resultCountLabel.setFont(
+                Font.font("Arial", FontWeight.BOLD, 14)
         );
 
         headingBox.getChildren().addAll(
                 heading,
-                subtitle
+                subtitle,
+                resultCountLabel
         );
 
-        Region spacer =
-                new Region();
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        HBox.setHgrow(
-                spacer,
-                Priority.ALWAYS
-        );
-
-        Label live =
-                new Label(
-                        "● Live Data"
-                );
-
-        live.setTextFill(
-                Color.web(GREEN)
-        );
-
-        live.setFont(
-                Font.font(
-                        "Arial",
-                        FontWeight.BOLD,
-                        14
-                )
-        );
-
-        live.setPadding(
-                new Insets(
-                        7,
-                        11,
-                        7,
-                        11
-                )
-        );
-
+        Label live = new Label("● Live Data");
+        live.setTextFill(Color.web(GREEN));
+        live.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+        live.setPadding(new Insets(7, 11, 7, 11));
         live.setStyle(
-                "-fx-background-color: " +
-                GREEN +
-                "18;" +
+                "-fx-background-color: " + GREEN + "18;" +
                 "-fx-background-radius: 20;"
         );
 
@@ -788,525 +437,460 @@ public class MechanicManagementPage extends AdminSectionPage {
                 live
         );
 
-        mechanicTable =
-                new TableView<>();
+        mechanicCards = new VBox(12);
+        mechanicCards.setFillWidth(true);
+        mechanicCards.setPadding(new Insets(3, 2, 10, 2));
 
-        mechanicTable.setItems(
-                mechanicList
+        ScrollPane scrollPane = new ScrollPane(mechanicCards);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        scrollPane.setPannable(true);
+
+        scrollPane.setStyle(
+                "-fx-background-color: transparent;" +
+                "-fx-background: transparent;"
         );
 
-        mechanicTable.setColumnResizePolicy(
-                TableView.CONSTRAINED_RESIZE_POLICY
-        );
+        VBox.setVgrow(scrollPane, Priority.ALWAYS);
 
-        mechanicTable.setFixedCellSize(
-                58
-        );
-
-        mechanicTable.setPrefHeight(
-                430
-        );
-
-        mechanicTable.setStyle(
-                "-fx-background-color: " +
-                SURFACE +
-                ";" +
-                "-fx-control-inner-background: " +
-                SURFACE +
-                ";" +
-                "-fx-table-cell-border-color: " +
-                BORDER +
-                ";" +
-                "-fx-border-color: " +
-                BORDER +
-                ";"
-        );
-
-        // =====================================================
-        // COLUMNS
-        // =====================================================
-
-        TableColumn<Mechanic, String> idColumn =
-                new TableColumn<>(
-                        "MECHANIC ID"
-                );
-
-        TableColumn<Mechanic, String> nameColumn =
-                new TableColumn<>(
-                        "MECHANIC"
-                );
-
-        TableColumn<Mechanic, String> phoneColumn =
-                new TableColumn<>(
-                        "PHONE"
-                );
-
-        TableColumn<Mechanic, String> emailColumn =
-                new TableColumn<>(
-                        "EMAIL"
-                );
-
-        TableColumn<Mechanic, String> specializationColumn =
-                new TableColumn<>(
-                        "SPECIALIZATION"
-                );
-
-        TableColumn<Mechanic, String> cityColumn =
-                new TableColumn<>(
-                        "CITY"
-                );
-
-        TableColumn<Mechanic, String> experienceColumn =
-                new TableColumn<>(
-                        "EXPERIENCE"
-                );
-
-        TableColumn<Mechanic, String> statusColumn =
-                new TableColumn<>(
-                        "STATUS"
-                );
-
-        idColumn.setCellValueFactory(
-                new PropertyValueFactory<>(
-                        "mechanicId"
-                )
-        );
-
-        nameColumn.setCellValueFactory(
-                new PropertyValueFactory<>(
-                        "name"
-                )
-        );
-
-        phoneColumn.setCellValueFactory(
-                new PropertyValueFactory<>(
-                        "phone"
-                )
-        );
-
-        emailColumn.setCellValueFactory(
-                new PropertyValueFactory<>(
-                        "email"
-                )
-        );
-
-        specializationColumn.setCellValueFactory(
-                new PropertyValueFactory<>(
-                        "specialization"
-                )
-        );
-
-        cityColumn.setCellValueFactory(
-                new PropertyValueFactory<>(
-                        "city"
-                )
-        );
-
-        experienceColumn.setCellValueFactory(
-                new PropertyValueFactory<>(
-                        "experience"
-                )
-        );
-
-        statusColumn.setCellValueFactory(
-                new PropertyValueFactory<>(
-                        "status"
-                )
-        );
-
-        idColumn.setMinWidth(150);
-        nameColumn.setMinWidth(150);
-        phoneColumn.setMinWidth(130);
-        emailColumn.setMinWidth(180);
-        specializationColumn.setMinWidth(150);
-        cityColumn.setMinWidth(100);
-        experienceColumn.setMinWidth(100);
-        statusColumn.setMinWidth(110);
-
-        // =====================================================
-        // TEXT CELLS
-        // =====================================================
-
-        idColumn.setCellFactory(
-                column ->
-                        createNormalCell(
-                                14
-                        )
-        );
-
-        phoneColumn.setCellFactory(
-                column ->
-                        createNormalCell(
-                                15
-                        )
-        );
-
-        emailColumn.setCellFactory(
-                column ->
-                        createNormalCell(
-                                15
-                        )
-        );
-
-        specializationColumn.setCellFactory(
-                column ->
-                        createNormalCell(
-                                15
-                        )
-        );
-
-        cityColumn.setCellFactory(
-                column ->
-                        createNormalCell(
-                                15
-                        )
-        );
-
-        experienceColumn.setCellFactory(
-                column ->
-                        createNormalCell(
-                                15
-                        )
-        );
-
-        // =====================================================
-        // NAME CELL
-        // =====================================================
-
-        nameColumn.setCellFactory(
-                column ->
-                        new TableCell<Mechanic, String>() {
-
-                            @Override
-                            protected void updateItem(
-                                    String item,
-                                    boolean empty
-                            ) {
-
-                                super.updateItem(
-                                        item,
-                                        empty
-                                );
-
-                                if (
-                                        empty ||
-                                        item == null
-                                ) {
-
-                                    setText(
-                                            null
-                                    );
-
-                                } else {
-
-                                    setText(
-                                            item
-                                    );
-
-                                    setTextFill(
-                                            Color.web(
-                                                    HEADING
-                                            )
-                                    );
-
-                                    setFont(
-                                            Font.font(
-                                                    "Arial",
-                                                    FontWeight.BOLD,
-                                                    16
-                                            )
-                                    );
-                                }
-                            }
-                        }
-        );
-
-        // =====================================================
-        // STATUS CELL
-        // =====================================================
-
-        statusColumn.setCellFactory(
-                column ->
-                        new TableCell<Mechanic, String>() {
-
-                            @Override
-                            protected void updateItem(
-                                    String item,
-                                    boolean empty
-                            ) {
-
-                                super.updateItem(
-                                        item,
-                                        empty
-                                );
-
-                                if (
-                                        empty ||
-                                        item == null
-                                ) {
-
-                                    setText(
-                                            null
-                                    );
-
-                                    setGraphic(
-                                            null
-                                    );
-
-                                    return;
-                                }
-
-                                Label badge =
-                                        new Label(
-                                                item
-                                        );
-
-                                badge.setPadding(
-                                        new Insets(
-                                                7,
-                                                13,
-                                                7,
-                                                13
-                                        )
-                                );
-
-                                badge.setFont(
-                                        Font.font(
-                                                "Arial",
-                                                FontWeight.BOLD,
-                                                14
-                                        )
-                                );
-
-                                if (
-                                        item.equalsIgnoreCase(
-                                                "Active"
-                                        )
-                                ) {
-
-                                    badge.setTextFill(
-                                            Color.web(
-                                                    GREEN
-                                            )
-                                    );
-
-                                    badge.setStyle(
-                                            "-fx-background-color: " +
-                                            GREEN +
-                                            "18;" +
-                                            "-fx-background-radius: 20;"
-                                    );
-
-                                } else {
-
-                                    badge.setTextFill(
-                                            Color.web(
-                                                    RED
-                                            )
-                                    );
-
-                                    badge.setStyle(
-                                            "-fx-background-color: " +
-                                            RED +
-                                            "18;" +
-                                            "-fx-background-radius: 20;"
-                                    );
-                                }
-
-                                setGraphic(
-                                        badge
-                                );
-                            }
-                        }
-        );
-
-        mechanicTable.getColumns().addAll(
-                idColumn,
-                nameColumn,
-                phoneColumn,
-                emailColumn,
-                specializationColumn,
-                cityColumn,
-                experienceColumn,
-                statusColumn
-        );
-
-        mechanicTable.setPlaceholder(
-                createEmptyState()
-        );
-
-        // =====================================================
-        // DOUBLE CLICK
-        // =====================================================
-
-        mechanicTable.setRowFactory(
-                tableView -> {
-
-                    TableRow<Mechanic> row =
-                            new TableRow<>();
-
-                    row.setOnMouseClicked(
-                            event -> {
-
-                                if (
-                                        event.getClickCount() == 2 &&
-                                        !row.isEmpty()
-                                ) {
-
-                                    showDetails(
-                                            row.getItem()
-                                    );
-                                }
-                            }
-                    );
-
-                    return row;
-                }
-        );
-
-        VBox.setVgrow(
-                mechanicTable,
-                Priority.ALWAYS
-        );
-
-        card.getChildren().addAll(
-                header,
-                mechanicTable
-        );
+        card.getChildren().addAll(header, scrollPane);
 
         return card;
     }
 
     // =========================================================
-    // NORMAL CELL
+    // MECHANIC CARD
     // =========================================================
 
-    private TableCell<Mechanic, String>
-    createNormalCell(
-            int size
+    private VBox createMechanicCard(
+            Mechanic mechanic,
+            int number
     ) {
 
-        return new TableCell<Mechanic, String>() {
+        VBox card = new VBox(14);
+        card.setPadding(new Insets(18, 20, 18, 20));
+        card.setMaxWidth(Double.MAX_VALUE);
+        card.setCursor(Cursor.HAND);
 
-            @Override
-            protected void updateItem(
-                    String item,
-                    boolean empty
+        String normalStyle =
+                "-fx-background-color: " + SECONDARY + ";" +
+                "-fx-border-color: " + BORDER + ";" +
+                "-fx-border-radius: 13;" +
+                "-fx-background-radius: 13;";
+
+        String hoverStyle =
+                "-fx-background-color: #EAF8FA;" +
+                "-fx-border-color: " + BLUE + ";" +
+                "-fx-border-radius: 13;" +
+                "-fx-background-radius: 13;" +
+                "-fx-effect: dropshadow(gaussian, rgba(37,99,235,0.18), 12, 0.15, 0, 3);";
+
+        card.setStyle(normalStyle);
+
+        // -----------------------------------------------------
+        // TOP
+        // -----------------------------------------------------
+
+        HBox top = new HBox(13);
+        top.setAlignment(Pos.CENTER_LEFT);
+
+        StackPane avatar = createAvatar(
+                safe(mechanic.getName())
+        );
+
+        VBox identity = new VBox(3);
+
+        HBox nameLine = new HBox(9);
+        nameLine.setAlignment(Pos.CENTER_LEFT);
+
+        Label numberLabel = new Label("#" + number);
+        numberLabel.setTextFill(Color.web(BLUE));
+        numberLabel.setFont(
+                Font.font("Arial", FontWeight.BOLD, 12)
+        );
+        numberLabel.setPadding(new Insets(4, 8, 4, 8));
+        numberLabel.setStyle(
+                "-fx-background-color: " + BLUE + "14;" +
+                "-fx-background-radius: 20;"
+        );
+
+        Label name = new Label(
+                safe(mechanic.getName())
+        );
+        name.setTextFill(Color.web(HEADING));
+        name.setFont(
+                Font.font("Arial", FontWeight.BOLD, 18)
+        );
+
+        nameLine.getChildren().addAll(
+                numberLabel,
+                name
+        );
+
+        Label role = new Label(
+                safe(mechanic.getSpecialization())
+        );
+        role.setTextFill(Color.web(TEXT));
+        role.setFont(Font.font("Arial", 13));
+
+        identity.getChildren().addAll(nameLine, role);
+
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        Label statusBadge = createStatusBadge(
+                safe(mechanic.getStatus())
+        );
+
+        top.getChildren().addAll(
+                avatar,
+                identity,
+                spacer,
+                statusBadge
+        );
+
+        // -----------------------------------------------------
+        // INFORMATION
+        // -----------------------------------------------------
+
+        HBox infoRow = new HBox(12);
+        infoRow.setFillHeight(true);
+
+        VBox phone = createInfoBox(
+                "PHONE",
+                safe(mechanic.getPhone())
+        );
+
+        VBox email = createInfoBox(
+                "EMAIL",
+                safe(mechanic.getEmail())
+        );
+
+        VBox city = createInfoBox(
+                "CITY",
+                safe(mechanic.getCity())
+        );
+
+        VBox specialization = createInfoBox(
+                "SPECIALIZATION",
+                safe(mechanic.getSpecialization())
+        );
+
+        VBox experience = createInfoBox(
+                "EXPERIENCE",
+                safe(mechanic.getExperience())
+        );
+
+        HBox.setHgrow(phone, Priority.ALWAYS);
+        HBox.setHgrow(email, Priority.ALWAYS);
+        HBox.setHgrow(city, Priority.ALWAYS);
+        HBox.setHgrow(specialization, Priority.ALWAYS);
+        HBox.setHgrow(experience, Priority.ALWAYS);
+
+        infoRow.getChildren().addAll(
+                phone,
+                email,
+                city,
+                specialization,
+                experience
+        );
+
+        // -----------------------------------------------------
+        // BOTTOM
+        // -----------------------------------------------------
+
+        HBox bottom = new HBox(12);
+        bottom.setAlignment(Pos.CENTER_LEFT);
+
+        Label idLabel = new Label(
+                "Database ID: " + safe(mechanic.getMechanicId())
+        );
+        idLabel.setTextFill(Color.web(TEXT));
+        idLabel.setFont(Font.font("Arial", 12));
+
+        Region bottomSpacer = new Region();
+        HBox.setHgrow(bottomSpacer, Priority.ALWAYS);
+
+        Button viewButton = new Button("View Details →");
+        styleSmallButton(viewButton, BLUE);
+
+        viewButton.setOnAction(
+                event -> showDetails(mechanic)
+        );
+
+        bottom.getChildren().addAll(
+                idLabel,
+                bottomSpacer,
+                viewButton
+        );
+
+        card.getChildren().addAll(
+                top,
+                new Separator(),
+                infoRow,
+                bottom
+        );
+
+        // -----------------------------------------------------
+        // HOVER
+        // -----------------------------------------------------
+
+        card.setOnMouseEntered(event -> {
+            card.setStyle(hoverStyle);
+            card.setTranslateY(-2);
+        });
+
+        card.setOnMouseExited(event -> {
+            card.setStyle(normalStyle);
+            card.setTranslateY(0);
+        });
+
+        // -----------------------------------------------------
+        // DOUBLE CLICK
+        // -----------------------------------------------------
+
+        card.setOnMouseClicked(event -> {
+            if (
+                    event.getClickCount() == 2 &&
+                    event.getTarget() != viewButton
             ) {
-
-                super.updateItem(
-                        item,
-                        empty
-                );
-
-                if (
-                        empty ||
-                        item == null
-                ) {
-
-                    setText(
-                            null
-                    );
-
-                } else {
-
-                    setText(
-                            item
-                    );
-
-                    setTextFill(
-                            Color.web(
-                                    TEXT
-                            )
-                    );
-
-                    setFont(
-                            Font.font(
-                                    "Arial",
-                                    size
-                            )
-                    );
-                }
+                showDetails(mechanic);
             }
-        };
+        });
+
+        return card;
     }
 
     // =========================================================
-    // EMPTY STATE
+    // AVATAR
     // =========================================================
 
-    private VBox createEmptyState() {
+    private StackPane createAvatar(String name) {
 
-        VBox box =
-                new VBox(8);
-
-        box.setAlignment(
-                Pos.CENTER
+        Circle circle = new Circle(
+                24,
+                Color.web(BLUE)
         );
 
-        Label icon =
-                new Label(
-                        "⚒"
-                );
-
-        icon.setTextFill(
-                Color.web(
-                        BLUE
-                )
+        Label initials = new Label(
+                getInitials(name)
         );
 
-        icon.setFont(
+        initials.setTextFill(Color.WHITE);
+        initials.setFont(
                 Font.font(
                         "Arial",
                         FontWeight.BOLD,
-                        32
+                        13
                 )
         );
 
-        Label title =
-                new Label(
-                        "No mechanics found"
-                );
-
-        title.setTextFill(
-                Color.web(
-                        HEADING
-                )
+        StackPane avatar = new StackPane(
+                circle,
+                initials
         );
 
-        title.setFont(
+        avatar.setMinSize(48, 48);
+        avatar.setPrefSize(48, 48);
+        avatar.setMaxSize(48, 48);
+
+        return avatar;
+    }
+
+    private String getInitials(String name) {
+
+        if (name == null || name.isBlank()) {
+            return "?";
+        }
+
+        String[] parts = name.trim().split("\\s+");
+
+        if (parts.length == 1) {
+            return parts[0]
+                    .substring(0, Math.min(2, parts[0].length()))
+                    .toUpperCase();
+        }
+
+        return (
+                parts[0].substring(0, 1) +
+                parts[parts.length - 1].substring(0, 1)
+        ).toUpperCase();
+    }
+
+    // =========================================================
+    // INFO BOX
+    // =========================================================
+
+    private VBox createInfoBox(
+            String title,
+            String value
+    ) {
+
+        VBox box = new VBox(5);
+        box.setPadding(new Insets(10, 12, 10, 12));
+        box.setMinWidth(120);
+
+        box.setStyle(
+                "-fx-background-color: " + SURFACE + ";" +
+                "-fx-background-radius: 9;" +
+                "-fx-border-color: " + BORDER + ";" +
+                "-fx-border-radius: 9;"
+        );
+
+        Label titleLabel = new Label(title);
+        titleLabel.setTextFill(Color.web(TEXT));
+        titleLabel.setFont(
                 Font.font(
                         "Arial",
                         FontWeight.BOLD,
-                        17
+                        11
                 )
         );
 
-        Label subtitle =
-                new Label(
-                        "Registered mechanics will appear here."
-                );
-
-        subtitle.setTextFill(
-                Color.web(
-                        TEXT
-                )
-        );
-
-        subtitle.setFont(
-                Font.font(
-                        "Arial",
-                        14
-                )
-        );
+        Label valueLabel = new Label(value);
+        valueLabel.setTextFill(Color.web(HEADING));
+        valueLabel.setFont(Font.font("Arial", 14));
+        valueLabel.setWrapText(true);
 
         box.getChildren().addAll(
-                icon,
-                title,
-                subtitle
+                titleLabel,
+                valueLabel
         );
 
         return box;
+    }
+
+    // =========================================================
+    // STATUS BADGE
+    // =========================================================
+
+    private Label createStatusBadge(String status) {
+
+        Label badge = new Label(
+                status.equals("-") ? "Unknown" : status
+        );
+
+        badge.setFont(
+                Font.font(
+                        "Arial",
+                        FontWeight.BOLD,
+                        13
+                )
+        );
+
+        badge.setPadding(
+                new Insets(7, 12, 7, 12)
+        );
+
+        if (status.equalsIgnoreCase("Active")) {
+            badge.setTextFill(Color.web(GREEN));
+            badge.setStyle(
+                    "-fx-background-color: " + GREEN + "18;" +
+                    "-fx-background-radius: 20;"
+            );
+        } else {
+            badge.setTextFill(Color.web(RED));
+            badge.setStyle(
+                    "-fx-background-color: " + RED + "18;" +
+                    "-fx-background-radius: 20;"
+            );
+        }
+
+        return badge;
+    }
+
+    // =========================================================
+    // SMALL BUTTON
+    // =========================================================
+
+    private void styleSmallButton(
+            Button button,
+            String color
+    ) {
+
+        button.setFont(
+                Font.font(
+                        "Arial",
+                        FontWeight.BOLD,
+                        13
+                )
+        );
+
+        button.setTextFill(
+                color.equals(BLUE)
+                        ? Color.WHITE
+                        : Color.web(HEADING)
+        );
+
+        button.setPadding(
+                new Insets(8, 13, 8, 13)
+        );
+
+        button.setCursor(Cursor.HAND);
+
+        String normalColor =
+                color.equals(BLUE) ? BLUE : SURFACE;
+
+        String hoverColor =
+                color.equals(BLUE) ? "#1D4ED8" : SECONDARY;
+
+        button.setStyle(
+                "-fx-background-color: " + normalColor + ";" +
+                "-fx-background-radius: 8;" +
+                "-fx-border-color: " +
+                (color.equals(BLUE) ? BLUE : BORDER) + ";" +
+                "-fx-border-radius: 8;"
+        );
+
+        button.setOnMouseEntered(event ->
+                button.setStyle(
+                        "-fx-background-color: " + hoverColor + ";" +
+                        "-fx-background-radius: 8;" +
+                        "-fx-border-color: " +
+                        (color.equals(BLUE) ? "#1D4ED8" : BLUE) + ";" +
+                        "-fx-border-radius: 8;"
+                )
+        );
+
+        button.setOnMouseExited(event ->
+                button.setStyle(
+                        "-fx-background-color: " + normalColor + ";" +
+                        "-fx-background-radius: 8;" +
+                        "-fx-border-color: " +
+                        (color.equals(BLUE) ? BLUE : BORDER) + ";" +
+                        "-fx-border-radius: 8;"
+                )
+        );
+    }
+
+    // =========================================================
+    // TEXT / COMBO STYLE
+    // =========================================================
+
+    private void styleTextField(TextField field) {
+
+        field.setStyle(
+                "-fx-background-color: " + SURFACE + ";" +
+                "-fx-text-fill: " + HEADING + ";" +
+                "-fx-prompt-text-fill: " + TEXT + ";" +
+                "-fx-border-color: " + BORDER + ";" +
+                "-fx-border-radius: 9;" +
+                "-fx-background-radius: 9;" +
+                "-fx-padding: 0 14 0 14;" +
+                "-fx-font-size: 15px;"
+        );
+    }
+
+    private void styleComboBox(ComboBox<String> comboBox) {
+
+        comboBox.setStyle(
+                "-fx-background-color: " + SURFACE + ";" +
+                "-fx-border-color: " + BORDER + ";" +
+                "-fx-border-radius: 9;" +
+                "-fx-background-radius: 9;" +
+                "-fx-font-size: 14px;"
+        );
     }
 
     // =========================================================
@@ -1315,52 +899,278 @@ public class MechanicManagementPage extends AdminSectionPage {
 
     private void loadMechanics() {
 
-        List<Mechanic> mechanics =
-                controller.getAllMechanics();
+        try {
 
-        mechanicList.setAll(
-                mechanics
-        );
+            List<Mechanic> mechanics =
+                    controller.getAllMechanics();
 
-        updateStatistics(
-                mechanics
+            allMechanics.clear();
+            allMechanics.addAll(mechanics);
+
+            updateStatistics(allMechanics);
+            applyFilters();
+
+        } catch (Exception e) {
+
+            e.printStackTrace();
+
+            showError(
+                    "Unable to Load Mechanics",
+                    e.getMessage()
+            );
+        }
+    }
+
+    // =========================================================
+    // FILTER + SEARCH + SORT
+    // =========================================================
+
+    private void applyFilters() {
+
+        if (mechanicCards == null) {
+            return;
+        }
+
+        String search =
+                searchField == null
+                        ? ""
+                        : searchField.getText()
+                                .trim()
+                                .toLowerCase();
+
+        String status =
+                statusFilter == null
+                        ? "All"
+                        : statusFilter.getValue();
+
+        String sort =
+                sortFilter == null
+                        ? "Newest First"
+                        : sortFilter.getValue();
+
+        List<Mechanic> filtered =
+                new ArrayList<>();
+
+        for (Mechanic mechanic : allMechanics) {
+
+            if (!matchesSearch(mechanic, search)) {
+                continue;
+            }
+
+            if (
+                    !"All".equals(status) &&
+                    !status.equalsIgnoreCase(
+                            safe(mechanic.getStatus())
+                    )
+            ) {
+                continue;
+            }
+
+            filtered.add(mechanic);
+        }
+
+        sortMechanics(filtered, sort);
+
+        mechanicList.setAll(filtered);
+        renderCards(filtered);
+    }
+
+    private boolean matchesSearch(
+            Mechanic mechanic,
+            String search
+    ) {
+
+        if (search.isBlank()) {
+            return true;
+        }
+
+        return safe(mechanic.getName())
+                .toLowerCase()
+                .contains(search)
+                ||
+                safe(mechanic.getEmail())
+                        .toLowerCase()
+                        .contains(search)
+                ||
+                safe(mechanic.getPhone())
+                        .toLowerCase()
+                        .contains(search)
+                ||
+                safe(mechanic.getCity())
+                        .toLowerCase()
+                        .contains(search)
+                ||
+                safe(mechanic.getSpecialization())
+                        .toLowerCase()
+                        .contains(search);
+    }
+
+    private void sortMechanics(
+            List<Mechanic> mechanics,
+            String sort
+    ) {
+
+        if ("Name A-Z".equals(sort)) {
+
+            mechanics.sort(
+                    Comparator.comparing(
+                            mechanic ->
+                                    safe(mechanic.getName())
+                                            .toLowerCase()
+                    )
+            );
+
+        } else if ("Name Z-A".equals(sort)) {
+
+            mechanics.sort(
+                    Comparator.comparing(
+                            (Mechanic mechanic) ->
+                                    safe(mechanic.getName())
+                                            .toLowerCase()
+                    ).reversed()
+            );
+
+        } else if ("Experience High-Low".equals(sort)) {
+
+            mechanics.sort(
+                    Comparator.comparingInt(
+                            this::experienceNumber
+                    ).reversed()
+            );
+
+        } else if ("Experience Low-High".equals(sort)) {
+
+            mechanics.sort(
+                    Comparator.comparingInt(
+                            this::experienceNumber
+                    )
+            );
+
+        } else if ("Oldest First".equals(sort)) {
+
+            mechanics.sort(
+                    Comparator.comparing(
+                            mechanic ->
+                                    safe(mechanic.getCreatedAt())
+                    )
+            );
+
+        } else {
+
+            mechanics.sort(
+                    Comparator.comparing(
+                            (Mechanic mechanic) ->
+                                    safe(mechanic.getCreatedAt())
+                    ).reversed()
+            );
+        }
+    }
+
+    private int experienceNumber(Mechanic mechanic) {
+
+        try {
+            return Integer.parseInt(
+                    safe(mechanic.getExperience())
+                            .replaceAll("[^0-9]", "")
+            );
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    // =========================================================
+    // RENDER
+    // =========================================================
+
+    private void renderCards(
+            List<Mechanic> mechanics
+    ) {
+
+        mechanicCards.getChildren().clear();
+
+        if (mechanics.isEmpty()) {
+
+            mechanicCards.getChildren().add(
+                    createEmptyState()
+            );
+
+            resultCountLabel.setText(
+                    "0 mechanics found"
+            );
+
+            return;
+        }
+
+        int number = 1;
+
+        for (Mechanic mechanic : mechanics) {
+
+            mechanicCards.getChildren().add(
+                    createMechanicCard(
+                            mechanic,
+                            number++
+                    )
+            );
+        }
+
+        resultCountLabel.setText(
+                mechanics.size() == 1
+                        ? "1 mechanic"
+                        : mechanics.size() + " mechanics"
         );
     }
 
     // =========================================================
-    // SEARCH
+    // EMPTY STATE
     // =========================================================
 
-    private void searchMechanics(
-            String text
-    ) {
+    private VBox createEmptyState() {
 
-        List<Mechanic> result =
-                controller.searchMechanics(
-                        text
-                );
+        VBox box = new VBox(9);
+        box.setAlignment(Pos.CENTER);
+        box.setPadding(new Insets(45));
 
-        mechanicList.setAll(
-                result
+        Label icon = new Label("⚒");
+        icon.setTextFill(Color.web(BLUE));
+        icon.setFont(
+                Font.font(
+                        "Arial",
+                        FontWeight.BOLD,
+                        34
+                )
         );
-    }
 
-    // =========================================================
-    // FILTER
-    // =========================================================
-
-    private void filterMechanics(
-            String status
-    ) {
-
-        List<Mechanic> result =
-                controller.getMechanicsByStatus(
-                        status
-                );
-
-        mechanicList.setAll(
-                result
+        Label title = new Label("No mechanics found");
+        title.setTextFill(Color.web(HEADING));
+        title.setFont(
+                Font.font(
+                        "Arial",
+                        FontWeight.BOLD,
+                        18
+                )
         );
+
+        Label subtitle = new Label(
+                "Try changing your search or filter."
+        );
+        subtitle.setTextFill(Color.web(TEXT));
+        subtitle.setFont(Font.font("Arial", 14));
+
+        Button add = createActionButton(
+                "+ Add Mechanic",
+                ORANGE
+        );
+
+        add.setOnAction(event -> showAddDialog());
+
+        box.getChildren().addAll(
+                icon,
+                title,
+                subtitle,
+                add
+        );
+
+        return box;
     }
 
     // =========================================================
@@ -1374,43 +1184,29 @@ public class MechanicManagementPage extends AdminSectionPage {
         int active = 0;
         int inactive = 0;
 
-        for (
-                Mechanic mechanic :
-                mechanics
-        ) {
+        for (Mechanic mechanic : mechanics) {
 
             if (
-                    mechanic.getStatus() != null &&
-                    mechanic.getStatus()
-                            .equalsIgnoreCase(
-                                    "Active"
-                            )
+                    "Active".equalsIgnoreCase(
+                            safe(mechanic.getStatus())
+                    )
             ) {
-
                 active++;
-
             } else {
-
                 inactive++;
             }
         }
 
         totalLabel.setText(
-                String.valueOf(
-                        mechanics.size()
-                )
+                String.valueOf(mechanics.size())
         );
 
         activeLabel.setText(
-                String.valueOf(
-                        active
-                )
+                String.valueOf(active)
         );
 
         inactiveLabel.setText(
-                String.valueOf(
-                        inactive
-                )
+                String.valueOf(inactive)
         );
     }
 
@@ -1420,184 +1216,103 @@ public class MechanicManagementPage extends AdminSectionPage {
 
     private void showAddDialog() {
 
-        Dialog<Mechanic> dialog =
-                new Dialog<>();
+        Dialog<Mechanic> dialog = new Dialog<>();
 
-        dialog.setTitle(
-                "Add Mechanic"
+        dialog.setTitle("Add Mechanic");
+        dialog.setHeaderText("Create New Mechanic");
+
+        ButtonType saveButton = new ButtonType(
+                "Save",
+                ButtonBar.ButtonData.OK_DONE
         );
 
-        dialog.setHeaderText(
-                "Create New Mechanic"
+        dialog.getDialogPane().getButtonTypes().addAll(
+                saveButton,
+                ButtonType.CANCEL
         );
 
-        ButtonType saveButton =
-                new ButtonType(
-                        "Save",
-                        ButtonBar.ButtonData.OK_DONE
-                );
+        GridPane form = createForm();
 
-        dialog.getDialogPane()
-                .getButtonTypes()
-                .addAll(
-                        saveButton,
-                        ButtonType.CANCEL
-                );
+        TextField name = field();
+        TextField email = field();
+        TextField phone = field();
+        TextField address = field();
+        TextField city = field();
+        TextField specialization = field();
+        TextField experience = field();
 
-        GridPane form =
-                createForm();
-
-        TextField name =
-                field();
-
-        TextField email =
-                field();
-
-        TextField phone =
-                field();
-
-        TextField address =
-                field();
-
-        TextField city =
-                field();
-
-        TextField specialization =
-                field();
-
-        TextField experience =
-                field();
-
-        ComboBox<String> status =
-                new ComboBox<>();
-
+        ComboBox<String> status = new ComboBox<>();
         status.getItems().addAll(
                 "Active",
                 "Inactive"
         );
+        status.setValue("Active");
+        status.setPrefWidth(280);
 
-        status.setValue(
-                "Active"
-        );
+        addFormRow(form, "Name", name, 0);
+        addFormRow(form, "Email", email, 1);
+        addFormRow(form, "Phone", phone, 2);
+        addFormRow(form, "Address", address, 3);
+        addFormRow(form, "City", city, 4);
+        addFormRow(form, "Specialization", specialization, 5);
+        addFormRow(form, "Experience", experience, 6);
+        addFormRow(form, "Status", status, 7);
 
-        status.setPrefWidth(
-                280
-        );
+        dialog.getDialogPane().setContent(form);
 
-        addFormRow(
-                form,
-                "Name",
-                name,
-                0
-        );
+        dialog.setResultConverter(button -> {
 
-        addFormRow(
-                form,
-                "Email",
-                email,
-                1
-        );
+            if (button != saveButton) {
+                return null;
+            }
 
-        addFormRow(
-                form,
-                "Phone",
-                phone,
-                2
-        );
+            return new Mechanic(
+                    "",
+                    name.getText().trim(),
+                    email.getText().trim(),
+                    phone.getText().trim(),
+                    address.getText().trim(),
+                    city.getText().trim(),
+                    specialization.getText().trim(),
+                    status.getValue(),
+                    experience.getText().trim(),
+                    String.valueOf(
+                            System.currentTimeMillis()
+                    )
+            );
+        });
 
-        addFormRow(
-                form,
-                "Address",
-                address,
-                3
-        );
+        dialog.showAndWait().ifPresent(mechanic -> {
 
-        addFormRow(
-                form,
-                "City",
-                city,
-                4
-        );
+            try {
 
-        addFormRow(
-                form,
-                "Specialization",
-                specialization,
-                5
-        );
+                if (controller.addMechanic(mechanic)) {
 
-        addFormRow(
-                form,
-                "Experience",
-                experience,
-                6
-        );
+                    loadMechanics();
 
-        addFormRow(
-                form,
-                "Status",
-                status,
-                7
-        );
+                    showInfo(
+                            "Success",
+                            "Mechanic added successfully."
+                    );
 
-        dialog.getDialogPane()
-                .setContent(
-                        form
-                );
+                } else {
 
-        dialog.setResultConverter(
-                button -> {
-
-                    if (
-                            button == saveButton
-                    ) {
-
-                        return new Mechanic(
-                                "",
-                                name.getText().trim(),
-                                email.getText().trim(),
-                                phone.getText().trim(),
-                                address.getText().trim(),
-                                city.getText().trim(),
-                                specialization.getText().trim(),
-                                status.getValue(),
-                                experience.getText().trim(),
-                                String.valueOf(
-                                        System.currentTimeMillis()
-                                )
-                        );
-                    }
-
-                    return null;
+                    showError(
+                            "Failed",
+                            "Mechanic could not be added."
+                    );
                 }
-        );
 
-        dialog.showAndWait()
-                .ifPresent(
-                        mechanic -> {
+            } catch (Exception e) {
 
-                            if (
-                                    controller.addMechanic(
-                                            mechanic
-                                    )
-                            ) {
+                e.printStackTrace();
 
-                                loadMechanics();
-
-                                showInfo(
-                                        "Success",
-                                        "Mechanic added successfully."
-                                );
-
-                            } else {
-
-                                showError(
-                                        "Failed",
-                                        "Mechanic could not be added."
-                                );
-                            }
-                        }
+                showError(
+                        "Failed",
+                        e.getMessage()
                 );
+            }
+        });
     }
 
     // =========================================================
@@ -1606,50 +1321,22 @@ public class MechanicManagementPage extends AdminSectionPage {
 
     private GridPane createForm() {
 
-        GridPane form =
-                new GridPane();
-
-        form.setHgap(
-                15
-        );
-
-        form.setVgap(
-                13
-        );
-
-        form.setPadding(
-                new Insets(
-                        20
-                )
-        );
+        GridPane form = new GridPane();
+        form.setHgap(15);
+        form.setVgap(13);
+        form.setPadding(new Insets(20));
 
         return form;
     }
 
     private TextField field() {
 
-        TextField field =
-                new TextField();
+        TextField field = new TextField();
 
-        field.setPrefWidth(
-                280
-        );
+        field.setPrefWidth(280);
+        field.setPrefHeight(40);
 
-        field.setPrefHeight(
-                40
-        );
-
-        field.setStyle(
-                "-fx-background-color: " +
-                SURFACE +
-                ";" +
-                "-fx-border-color: " +
-                BORDER +
-                ";" +
-                "-fx-border-radius: 7;" +
-                "-fx-background-radius: 7;" +
-                "-fx-font-size: 15px;"
-        );
+        styleTextField(field);
 
         return field;
     }
@@ -1661,17 +1348,9 @@ public class MechanicManagementPage extends AdminSectionPage {
             int row
     ) {
 
-        Label label =
-                new Label(
-                        labelText
-                );
+        Label label = new Label(labelText);
 
-        label.setTextFill(
-                Color.web(
-                        HEADING
-                )
-        );
-
+        label.setTextFill(Color.web(HEADING));
         label.setFont(
                 Font.font(
                         "Arial",
@@ -1680,17 +1359,8 @@ public class MechanicManagementPage extends AdminSectionPage {
                 )
         );
 
-        form.add(
-                label,
-                0,
-                row
-        );
-
-        form.add(
-                control,
-                1,
-                row
-        );
+        form.add(label, 0, row);
+        form.add(control, 1, row);
     }
 
     // =========================================================
@@ -1701,124 +1371,167 @@ public class MechanicManagementPage extends AdminSectionPage {
             Mechanic mechanic
     ) {
 
-        Alert alert =
-                new Alert(
-                        Alert.AlertType.INFORMATION
-                );
+        Dialog<Void> dialog = new Dialog<>();
 
-        alert.setTitle(
-                "Mechanic Details"
+        dialog.setTitle("Mechanic Details");
+        dialog.setHeaderText(
+                safe(mechanic.getName())
         );
 
-        alert.setHeaderText(
-                safe(
-                        mechanic.getName()
+        dialog.getDialogPane().getButtonTypes().add(
+                new ButtonType(
+                        "Close",
+                        ButtonBar.ButtonData.CANCEL_CLOSE
                 )
         );
 
-        alert.setContentText(
-                "Mechanic ID: " +
-                safe(
+        VBox content = new VBox(12);
+        content.setPadding(new Insets(20));
+        content.setPrefWidth(480);
+
+        HBox profile = new HBox(13);
+        profile.setAlignment(Pos.CENTER_LEFT);
+
+        StackPane avatar = createAvatar(
+                safe(mechanic.getName())
+        );
+
+        VBox identity = new VBox(3);
+
+        Label name = new Label(
+                safe(mechanic.getName())
+        );
+        name.setTextFill(Color.web(HEADING));
+        name.setFont(
+                Font.font(
+                        "Arial",
+                        FontWeight.BOLD,
+                        22
+                )
+        );
+
+        Label specialization = new Label(
+                safe(mechanic.getSpecialization())
+        );
+        specialization.setTextFill(Color.web(TEXT));
+        specialization.setFont(Font.font("Arial", 14));
+
+        identity.getChildren().addAll(
+                name,
+                specialization
+        );
+
+        profile.getChildren().addAll(
+                avatar,
+                identity
+        );
+
+        content.getChildren().addAll(
+                profile,
+                new Separator(),
+                createDetailRow(
+                        "Mechanic ID",
                         mechanic.getMechanicId()
-                ) +
-                "\n\n" +
-
-                "Email: " +
-                safe(
+                ),
+                createDetailRow(
+                        "Email",
                         mechanic.getEmail()
-                ) +
-                "\n\n" +
-
-                "Phone: " +
-                safe(
+                ),
+                createDetailRow(
+                        "Phone",
                         mechanic.getPhone()
-                ) +
-                "\n\n" +
-
-                "Address: " +
-                safe(
+                ),
+                createDetailRow(
+                        "Address",
                         mechanic.getAddress()
-                ) +
-                "\n\n" +
-
-                "City: " +
-                safe(
+                ),
+                createDetailRow(
+                        "City",
                         mechanic.getCity()
-                ) +
-                "\n\n" +
-
-                "Specialization: " +
-                safe(
+                ),
+                createDetailRow(
+                        "Specialization",
                         mechanic.getSpecialization()
-                ) +
-                "\n\n" +
-
-                "Experience: " +
-                safe(
+                ),
+                createDetailRow(
+                        "Experience",
                         mechanic.getExperience()
-                ) +
-                "\n\n" +
-
-                "Status: " +
-                safe(
+                ),
+                createDetailRow(
+                        "Status",
                         mechanic.getStatus()
+                ),
+                createDetailRow(
+                        "Registered",
+                        mechanic.getCreatedAt()
                 )
         );
 
-        alert.showAndWait();
+        dialog.getDialogPane().setContent(content);
+        dialog.getDialogPane().setStyle(
+                "-fx-background-color: " + BG + ";"
+        );
+
+        dialog.showAndWait();
+    }
+
+    private HBox createDetailRow(
+            String labelText,
+            String valueText
+    ) {
+
+        HBox row = new HBox(15);
+        row.setAlignment(Pos.CENTER_LEFT);
+
+        Label label = new Label(labelText);
+        label.setPrefWidth(110);
+        label.setTextFill(Color.web(TEXT));
+        label.setFont(
+                Font.font(
+                        "Arial",
+                        FontWeight.BOLD,
+                        14
+                )
+        );
+
+        Label value = new Label(safe(valueText));
+        value.setTextFill(Color.web(HEADING));
+        value.setFont(Font.font("Arial", 15));
+        value.setWrapText(true);
+
+        HBox.setHgrow(value, Priority.ALWAYS);
+
+        row.getChildren().addAll(label, value);
+
+        return row;
     }
 
     // =========================================================
-    // SAFE STRING
+    // SAFE
     // =========================================================
 
-    private String safe(
-            String value
-    ) {
+    private String safe(String value) {
 
-        if (
-                value == null ||
-                value.isBlank()
-        ) {
-
-            return "-";
-        }
-
-        return value;
+        return value == null || value.isBlank()
+                ? "-"
+                : value;
     }
 
     // =========================================================
     // ERROR VIEW
     // =========================================================
 
-    private VBox createErrorView(
-            String message
-    ) {
+    private VBox createErrorView(String message) {
 
-        VBox box =
-                new VBox(12);
-
-        box.setAlignment(
-                Pos.CENTER
+        VBox box = new VBox(12);
+        box.setAlignment(Pos.CENTER);
+        box.setPadding(new Insets(30));
+        box.setStyle(
+                "-fx-background-color: " + BG + ";"
         );
 
-        box.setPadding(
-                new Insets(
-                        30
-                )
-        );
-
-        Label icon =
-                new Label(
-                        "!"
-                );
-
-        icon.setTextFill(
-                Color.web(
-                        RED
-                )
-        );
-
+        Label icon = new Label("!");
+        icon.setTextFill(Color.web(RED));
         icon.setFont(
                 Font.font(
                         "Arial",
@@ -1827,17 +1540,10 @@ public class MechanicManagementPage extends AdminSectionPage {
                 )
         );
 
-        Label title =
-                new Label(
-                        "Mechanic Management Error"
-                );
-
-        title.setTextFill(
-                Color.web(
-                        HEADING
-                )
+        Label title = new Label(
+                "Mechanic Management Error"
         );
-
+        title.setTextFill(Color.web(HEADING));
         title.setFont(
                 Font.font(
                         "Arial",
@@ -1846,23 +1552,9 @@ public class MechanicManagementPage extends AdminSectionPage {
                 )
         );
 
-        Label text =
-                new Label(
-                        message
-                );
-
-        text.setTextFill(
-                Color.web(
-                        TEXT
-                )
-        );
-
-        text.setFont(
-                Font.font(
-                        "Arial",
-                        15
-                )
-        );
+        Label text = new Label(message);
+        text.setTextFill(Color.web(TEXT));
+        text.setFont(Font.font("Arial", 15));
 
         box.getChildren().addAll(
                 icon,
@@ -1883,22 +1575,11 @@ public class MechanicManagementPage extends AdminSectionPage {
     ) {
 
         Alert alert =
-                new Alert(
-                        Alert.AlertType.INFORMATION
-                );
+                new Alert(Alert.AlertType.INFORMATION);
 
-        alert.setTitle(
-                title
-        );
-
-        alert.setHeaderText(
-                null
-        );
-
-        alert.setContentText(
-                message
-        );
-
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
         alert.showAndWait();
     }
 
@@ -1908,22 +1589,15 @@ public class MechanicManagementPage extends AdminSectionPage {
     ) {
 
         Alert alert =
-                new Alert(
-                        Alert.AlertType.ERROR
-                );
+                new Alert(Alert.AlertType.ERROR);
 
-        alert.setTitle(
-                title
-        );
-
-        alert.setHeaderText(
-                null
-        );
-
+        alert.setTitle(title);
+        alert.setHeaderText(null);
         alert.setContentText(
-                message
+                message == null
+                        ? "Unknown error"
+                        : message
         );
-
         alert.showAndWait();
     }
 }
