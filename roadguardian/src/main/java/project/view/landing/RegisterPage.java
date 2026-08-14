@@ -1,7 +1,12 @@
 package project.view.landing;
+
 import project.controller.RegisterController;
 
+import javafx.animation.KeyFrame;
+import javafx.animation.KeyValue;
 import javafx.animation.ScaleTransition;
+import javafx.animation.Timeline;
+import javafx.animation.TranslateTransition;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
@@ -9,9 +14,21 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
+import javafx.scene.effect.DropShadow;
+import javafx.scene.image.Image;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundImage;
+import javafx.scene.layout.BackgroundPosition;
+import javafx.scene.layout.BackgroundRepeat;
+import javafx.scene.layout.BackgroundSize;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
+import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.util.Duration;
@@ -35,11 +52,92 @@ public class RegisterPage {
     private void createPage(RegisterController controller) {
 
         // =====================================================
-        // BACKGROUND
+        // BACKGROUND IMAGE
         // =====================================================
 
-        root.setStyle(
-                "-fx-background-color: #D6F0F3;"
+        Image backgroundImage =
+                new Image(
+                        getClass()
+                                .getResource(
+                                        "/images/registerBg.png"
+                                )
+                                .toExternalForm()
+                );
+
+        System.out.println(
+                "Register Background Error: "
+                        + backgroundImage.isError()
+        );
+
+        BackgroundImage background =
+                new BackgroundImage(
+                        backgroundImage,
+
+                        BackgroundRepeat.NO_REPEAT,
+
+                        BackgroundRepeat.NO_REPEAT,
+
+                        BackgroundPosition.CENTER,
+
+                        new BackgroundSize(
+                                100,
+                                100,
+                                false,
+                                false,
+                                false,
+                                true
+                        )
+                );
+
+        root.setBackground(
+                new Background(
+                        background
+                )
+        );
+
+        // =====================================================
+        // BACK BUTTON
+        // =====================================================
+
+        Button backButton =
+                new Button("← Back");
+
+        backButton.setPrefWidth(105);
+        backButton.setPrefHeight(40);
+
+        backButton.setStyle(
+                "-fx-background-color: transparent;" +
+                "-fx-text-fill: #17345F;" +
+                "-fx-font-family: 'Segoe UI';" +
+                "-fx-font-size: 14px;" +
+                "-fx-font-weight: bold;" +
+                "-fx-cursor: hand;"
+        );
+
+        addBackHover(
+                backButton
+        );
+
+        HBox topBar =
+                new HBox(
+                        backButton
+                );
+
+        topBar.setAlignment(
+                Pos.CENTER_LEFT
+        );
+
+        topBar.setPadding(
+                new Insets(
+                        18,
+                        30,
+                        5,
+                        30
+                )
+        );
+
+        topBar.setStyle(
+                "-fx-background-color: transparent;"
         );
 
         // =====================================================
@@ -68,18 +166,23 @@ public class RegisterPage {
 
         HBox logo =
                 new HBox(
+                        0,
                         roadText,
                         guardianText
                 );
 
-        logo.setAlignment(Pos.CENTER);
+        logo.setAlignment(
+                Pos.CENTER
+        );
 
         // =====================================================
         // HEADING
         // =====================================================
 
         Text heading =
-                new Text("Create Your Account");
+                new Text(
+                        "Create Your Account"
+                );
 
         heading.setStyle(
                 "-fx-font-family: 'Segoe UI';" +
@@ -87,6 +190,10 @@ public class RegisterPage {
                 "-fx-font-weight: bold;" +
                 "-fx-fill: #172033;"
         );
+
+        // =====================================================
+        // SUBTITLE
+        // =====================================================
 
         Text subtitle =
                 new Text(
@@ -104,63 +211,89 @@ public class RegisterPage {
         // =====================================================
 
         Label nameLabel =
-                createLabel("Full Name");
+                createLabel(
+                        "Full Name"
+                );
 
         TextField nameField =
                 new TextField();
 
-        nameField.setPromptText("Enter your full name");
+        nameField.setPromptText(
+                "Enter your full name"
+        );
 
-        styleField(nameField);
+        styleField(
+                nameField
+        );
 
         // =====================================================
         // EMAIL
         // =====================================================
 
         Label emailLabel =
-                createLabel("Email Address");
+                createLabel(
+                        "Email Address"
+                );
 
         TextField emailField =
                 new TextField();
 
-        emailField.setPromptText("Enter your email");
+        emailField.setPromptText(
+                "Enter your email"
+        );
 
-        styleField(emailField);
+        styleField(
+                emailField
+        );
 
         // =====================================================
         // PHONE
         // =====================================================
 
         Label phoneLabel =
-                createLabel("Phone Number");
+                createLabel(
+                        "Phone Number"
+                );
 
         TextField phoneField =
                 new TextField();
 
-        phoneField.setPromptText("Enter your phone number");
+        phoneField.setPromptText(
+                "Enter your phone number"
+        );
 
-        styleField(phoneField);
+        styleField(
+                phoneField
+        );
 
         // =====================================================
         // PASSWORD
         // =====================================================
 
         Label passwordLabel =
-                createLabel("Password");
+                createLabel(
+                        "Password"
+                );
 
         PasswordField passwordField =
                 new PasswordField();
 
-        passwordField.setPromptText("Create a password");
+        passwordField.setPromptText(
+                "Create a password"
+        );
 
-        styleField(passwordField);
+        styleField(
+                passwordField
+        );
 
         // =====================================================
         // CONFIRM PASSWORD
         // =====================================================
 
         Label confirmPasswordLabel =
-                createLabel("Confirm Password");
+                createLabel(
+                        "Confirm Password"
+                );
 
         PasswordField confirmPasswordField =
                 new PasswordField();
@@ -169,21 +302,34 @@ public class RegisterPage {
                 "Confirm your password"
         );
 
-        styleField(confirmPasswordField);
+        styleField(
+                confirmPasswordField
+        );
 
         // =====================================================
         // REGISTER BUTTON
         // =====================================================
 
         Button registerButton =
-                new Button("Create Account");
+                new Button(
+                        "Create Account"
+                );
 
-        registerButton.setPrefWidth(360);
-        registerButton.setPrefHeight(45);
+        registerButton.setPrefWidth(
+                520
+        );
+
+        registerButton.setMaxWidth(
+                520
+        );
+
+        registerButton.setPrefHeight(
+                46
+        );
 
         registerButton.setStyle(
                 "-fx-background-color: #F97316;" +
-                "-fx-background-radius: 8px;" +
+                "-fx-background-radius: 9px;" +
                 "-fx-text-fill: white;" +
                 "-fx-font-family: 'Segoe UI';" +
                 "-fx-font-size: 16px;" +
@@ -191,7 +337,9 @@ public class RegisterPage {
                 "-fx-cursor: hand;"
         );
 
-        addHover(registerButton);
+        addRegisterHover(
+                registerButton
+        );
 
         // =====================================================
         // LOGIN LINK
@@ -209,7 +357,9 @@ public class RegisterPage {
         );
 
         Button loginButton =
-                new Button("Login");
+                new Button(
+                        "Login"
+                );
 
         loginButton.setStyle(
                 "-fx-background-color: transparent;" +
@@ -220,6 +370,10 @@ public class RegisterPage {
                 "-fx-cursor: hand;"
         );
 
+        addLinkHover(
+                loginButton
+        );
+
         HBox loginBox =
                 new HBox(
                         5,
@@ -227,7 +381,9 @@ public class RegisterPage {
                         loginButton
                 );
 
-        loginBox.setAlignment(Pos.CENTER);
+        loginBox.setAlignment(
+                Pos.CENTER
+        );
 
         // =====================================================
         // FORM
@@ -235,7 +391,8 @@ public class RegisterPage {
 
         VBox form =
                 new VBox(
-                        8,
+                        7,
+
                         nameLabel,
                         nameField,
 
@@ -252,10 +409,21 @@ public class RegisterPage {
                         confirmPasswordField,
 
                         registerButton,
+
                         loginBox
                 );
 
-        form.setPrefWidth(360);
+        form.setAlignment(
+                Pos.CENTER
+        );
+
+        form.setPrefWidth(
+                520
+        );
+
+        form.setMaxWidth(
+                520
+        );
 
         // =====================================================
         // CARD
@@ -263,69 +431,403 @@ public class RegisterPage {
 
         VBox card =
                 new VBox(
-                        20,
+                        16,
+
                         logo,
                         heading,
                         subtitle,
                         form
                 );
 
-        card.setAlignment(Pos.CENTER);
+        card.setAlignment(
+                Pos.CENTER
+        );
 
-        card.setPrefWidth(460);
+        card.setPrefWidth(
+                650
+        );
+
+        card.setMinWidth(
+                650
+        );
+
+        card.setMaxWidth(
+                650
+        );
+
+        card.setPrefHeight(
+                650
+        );
+
+        card.setMinHeight(
+                650
+        );
+
+        card.setMaxHeight(
+                650
+        );
 
         card.setPadding(
                 new Insets(
-                        35,
-                        50,
-                        35,
-                        50
+                        30,
+                        55,
+                        28,
+                        55
                 )
         );
 
         card.setStyle(
-                "-fx-background-color: rgba(238,249,250,0.97);" +
-                "-fx-background-radius: 18px;" +
-                "-fx-border-color: #B8D4D9;" +
-                "-fx-border-radius: 18px;"
+                "-fx-background-color: rgba(255,255,255,0.92);" +
+                "-fx-background-radius: 24px;"
         );
 
         // =====================================================
-        // CENTER
+        // CARD SHADOW
         // =====================================================
 
-        VBox center =
-                new VBox(card);
+        DropShadow cardShadow =
+                new DropShadow();
 
-        center.setAlignment(Pos.CENTER);
+        cardShadow.setColor(
+                Color.rgb(
+                        37,
+                        99,
+                        235,
+                        0.18
+                )
+        );
 
-        center.setPadding(
-                new Insets(25)
+        cardShadow.setRadius(
+                25
+        );
+
+        cardShadow.setSpread(
+                0.08
+        );
+
+        card.setEffect(
+                cardShadow
         );
 
         // =====================================================
-        // BACK BUTTON
+        // ANIMATED CARD BORDER
         // =====================================================
 
-        Button backButton =
-                new Button("← Back");
+        Rectangle animatedBorder =
+                new Rectangle(
+                        650,
+                        650
+                );
 
-        backButton.setStyle(
-                "-fx-background-color: transparent;" +
-                "-fx-text-fill: #526274;" +
+        animatedBorder.setArcWidth(
+                48
+        );
+
+        animatedBorder.setArcHeight(
+                48
+        );
+
+        animatedBorder.setFill(
+                Color.TRANSPARENT
+        );
+
+        animatedBorder.setStroke(
+                Color.rgb(
+                        37,
+                        99,
+                        235,
+                        0.75
+                )
+        );
+
+        animatedBorder.setStrokeWidth(
+                2.5
+        );
+
+        animatedBorder.getStrokeDashArray()
+                .setAll(
+                        18.0,
+                        9.0,
+                        4.0,
+                        9.0
+                );
+
+        animatedBorder.setMouseTransparent(
+                true
+        );
+
+        // =====================================================
+        // BORDER GLOW
+        // =====================================================
+
+        DropShadow borderGlow =
+                new DropShadow();
+
+        borderGlow.setColor(
+                Color.rgb(
+                        37,
+                        99,
+                        235,
+                        0.65
+                )
+        );
+
+        borderGlow.setRadius(
+                10
+        );
+
+        borderGlow.setSpread(
+                0.08
+        );
+
+        animatedBorder.setEffect(
+                borderGlow
+        );
+
+        // =====================================================
+        // BORDER RUNNING ANIMATION
+        // =====================================================
+
+        Timeline borderAnimation =
+                new Timeline(
+
+                        new KeyFrame(
+                                Duration.ZERO,
+
+                                new KeyValue(
+                                        animatedBorder
+                                                .strokeDashOffsetProperty(),
+                                        0
+                                )
+                        ),
+
+                        new KeyFrame(
+                                Duration.seconds(2.2),
+
+                                new KeyValue(
+                                        animatedBorder
+                                                .strokeDashOffsetProperty(),
+                                        -60
+                                )
+                        )
+                );
+
+        borderAnimation.setCycleCount(
+                Timeline.INDEFINITE
+        );
+
+        borderAnimation.play();
+
+        // =====================================================
+        // BORDER GLOW PULSE
+        // =====================================================
+
+        Timeline borderGlowAnimation =
+                new Timeline(
+
+                        new KeyFrame(
+                                Duration.ZERO,
+
+                                new KeyValue(
+                                        borderGlow.radiusProperty(),
+                                        8
+                                )
+                        ),
+
+                        new KeyFrame(
+                                Duration.seconds(1.4),
+
+                                new KeyValue(
+                                        borderGlow.radiusProperty(),
+                                        22
+                                )
+                        ),
+
+                        new KeyFrame(
+                                Duration.seconds(2.8),
+
+                                new KeyValue(
+                                        borderGlow.radiusProperty(),
+                                        8
+                                )
+                        )
+                );
+
+        borderGlowAnimation.setCycleCount(
+                Timeline.INDEFINITE
+        );
+
+        borderGlowAnimation.play();
+
+        // =====================================================
+        // CARD STACK
+        // =====================================================
+
+        StackPane cardStack =
+                new StackPane();
+
+        cardStack.setPrefWidth(
+                650
+        );
+
+        cardStack.setMinWidth(
+                650
+        );
+
+        cardStack.setMaxWidth(
+                650
+        );
+
+        cardStack.setPrefHeight(
+                650
+        );
+
+        cardStack.setMinHeight(
+                650
+        );
+
+        cardStack.setMaxHeight(
+                650
+        );
+
+        cardStack.getChildren().addAll(
+                animatedBorder,
+                card
+        );
+
+        // =====================================================
+        // SAFETY TITLE
+        // =====================================================
+
+        Text safetyTitle =
+                new Text(
+                        "Your Safety. Our Priority."
+                );
+
+        safetyTitle.setStyle(
                 "-fx-font-family: 'Segoe UI';" +
-                "-fx-font-size: 14px;" +
+                "-fx-font-size: 27px;" +
                 "-fx-font-weight: bold;" +
-                "-fx-cursor: hand;"
+                "-fx-fill: #172033;"
         );
 
-        HBox topBar =
-                new HBox(backButton);
+        Region leftLine =
+                createLine();
 
-        topBar.setAlignment(Pos.CENTER_LEFT);
+        Region rightLine =
+                createLine();
 
-        topBar.setPadding(
-                new Insets(18, 25, 5, 25)
+        HBox safetyHeader =
+                new HBox(
+                        15,
+                        leftLine,
+                        safetyTitle,
+                        rightLine
+                );
+
+        safetyHeader.setAlignment(
+                Pos.CENTER
+        );
+
+        // =====================================================
+        // SAFETY CARDS
+        // =====================================================
+
+        VBox safety =
+                createSafetyCard(
+                        "✓",
+                        "Your Safety",
+                        "Our Priority"
+                );
+
+        VBox mechanics =
+                createSafetyCard(
+                        "⚙",
+                        "Expert",
+                        "Mechanics"
+                );
+
+        VBox support =
+                createSafetyCard(
+                        "◉",
+                        "24/7",
+                        "Support"
+                );
+
+        VBox reliable =
+                createSafetyCard(
+                        "◆",
+                        "Safe &",
+                        "Reliable"
+                );
+
+        VBox safetyCards =
+                new VBox(
+                        15,
+                        safety,
+                        mechanics,
+                        support,
+                        reliable
+                );
+
+        safetyCards.setAlignment(
+                Pos.CENTER
+        );
+
+        // =====================================================
+        // RIGHT INFO PANEL
+        // =====================================================
+
+        VBox infoPanel =
+                new VBox(
+                        25,
+                        safetyHeader,
+                        safetyCards
+                );
+
+        infoPanel.setAlignment(
+                Pos.TOP_CENTER
+        );
+
+        infoPanel.setPrefWidth(
+                260
+        );
+
+        infoPanel.setMaxWidth(
+                260
+        );
+
+        infoPanel.setPadding(
+                new Insets(
+                        20,
+                        10,
+                        20,
+                        10
+                )
+        );
+
+        // =====================================================
+        // MAIN CONTENT
+        // =====================================================
+
+        HBox mainContent =
+                new HBox(
+                        55,
+                        infoPanel,
+                        cardStack
+                );
+
+        mainContent.setAlignment(
+                Pos.CENTER
+        );
+
+        mainContent.setPadding(
+                new Insets(
+                        5,
+                        40,
+                        5,
+                        40
+                )
         );
 
         // =====================================================
@@ -344,15 +846,23 @@ public class RegisterPage {
         );
 
         HBox footer =
-                new HBox(footerText);
+                new HBox(
+                        footerText
+                );
 
-        footer.setAlignment(Pos.CENTER);
+        footer.setAlignment(
+                Pos.CENTER
+        );
 
-        footer.setPadding(new Insets(12));
+        footer.setPadding(
+                new Insets(
+                        9
+                )
+        );
 
         footer.setStyle(
-                "-fx-background-color: #DFF3F5;" +
-                "-fx-border-color: #B8D4D9;" +
+                "-fx-background-color: rgba(223,243,245,0.80);" +
+                "-fx-border-color: rgba(184,212,217,0.70);" +
                 "-fx-border-width: 1 0 0 0;"
         );
 
@@ -379,28 +889,402 @@ public class RegisterPage {
         );
 
         // =====================================================
-        // LAYOUT
+        // ROOT LAYOUT
         // =====================================================
 
-        root.setTop(topBar);
+        root.setTop(
+                topBar
+        );
 
-        root.setCenter(center);
+        root.setCenter(
+                mainContent
+        );
 
-        root.setBottom(footer);
+        root.setBottom(
+                footer
+        );
     }
 
     // =====================================================
-    // LABEL METHOD
+    // SAFETY CARD
     // =====================================================
 
-    private Label createLabel(String text) {
+    private VBox createSafetyCard(
+            String iconText,
+            String line1,
+            String line2
+    ) {
+
+        Circle iconCircle =
+                new Circle(
+                        27
+                );
+
+        iconCircle.setFill(
+                Color.rgb(
+                        235,
+                        247,
+                        255,
+                        0.75
+                )
+        );
+
+        iconCircle.setStroke(
+                Color.rgb(
+                        37,
+                        99,
+                        235,
+                        0.65
+                )
+        );
+
+        iconCircle.setStrokeWidth(
+                1.8
+        );
+
+        Text icon =
+                new Text(
+                        iconText
+                );
+
+        icon.setStyle(
+                "-fx-font-family: 'Segoe UI Symbol';" +
+                "-fx-font-size: 22px;" +
+                "-fx-font-weight: bold;" +
+                "-fx-fill: #2563EB;"
+        );
+
+        StackPane iconContainer =
+                new StackPane(
+                        iconCircle,
+                        icon
+                );
+
+        // =====================================================
+        // ICON GLOW
+        // =====================================================
+
+        DropShadow glow =
+                new DropShadow();
+
+        glow.setColor(
+                Color.rgb(
+                        37,
+                        99,
+                        235,
+                        0.75
+                )
+        );
+
+        glow.setRadius(
+                7
+        );
+
+        glow.setSpread(
+                0.10
+        );
+
+        iconCircle.setEffect(
+                glow
+        );
+
+        // =====================================================
+        // ICON GLOW ANIMATION
+        // =====================================================
+
+        Timeline glowAnimation =
+                new Timeline(
+
+                        new KeyFrame(
+                                Duration.ZERO,
+
+                                new KeyValue(
+                                        glow.radiusProperty(),
+                                        6
+                                ),
+
+                                new KeyValue(
+                                        iconCircle.opacityProperty(),
+                                        0.65
+                                )
+                        ),
+
+                        new KeyFrame(
+                                Duration.seconds(1.2),
+
+                                new KeyValue(
+                                        glow.radiusProperty(),
+                                        19
+                                ),
+
+                                new KeyValue(
+                                        iconCircle.opacityProperty(),
+                                        1.0
+                                )
+                        ),
+
+                        new KeyFrame(
+                                Duration.seconds(2.4),
+
+                                new KeyValue(
+                                        glow.radiusProperty(),
+                                        6
+                                ),
+
+                                new KeyValue(
+                                        iconCircle.opacityProperty(),
+                                        0.65
+                                )
+                        )
+                );
+
+        glowAnimation.setCycleCount(
+                Timeline.INDEFINITE
+        );
+
+        glowAnimation.play();
+
+        // =====================================================
+        // FLOATING ANIMATION
+        // =====================================================
+
+        TranslateTransition floating =
+                new TranslateTransition(
+                        Duration.seconds(2.2),
+                        iconContainer
+                );
+
+        floating.setFromY(
+                0
+        );
+
+        floating.setToY(
+                -4
+        );
+
+        floating.setAutoReverse(
+                true
+        );
+
+        floating.setCycleCount(
+                TranslateTransition.INDEFINITE
+        );
+
+        floating.play();
+
+        // =====================================================
+        // TEXT
+        // =====================================================
+
+        Text firstText =
+                new Text(
+                        line1
+                );
+
+        firstText.setStyle(
+                "-fx-font-family: 'Segoe UI';" +
+                "-fx-font-size: 14px;" +
+                "-fx-font-weight: bold;" +
+                "-fx-fill: #172033;"
+        );
+
+        Text secondText =
+                new Text(
+                        line2
+                );
+
+        secondText.setStyle(
+                "-fx-font-family: 'Segoe UI';" +
+                "-fx-font-size: 14px;" +
+                "-fx-font-weight: bold;" +
+                "-fx-fill: #2563EB;"
+        );
+
+        VBox textBox =
+                new VBox(
+                        1,
+                        firstText,
+                        secondText
+                );
+
+        textBox.setAlignment(
+                Pos.CENTER
+        );
+
+        // =====================================================
+        // SAFETY CARD
+        // =====================================================
+
+        VBox card =
+                new VBox(
+                        14,
+                        iconContainer,
+                        textBox
+                );
+
+        card.setAlignment(
+                Pos.CENTER_LEFT
+        );
+
+        card.setPrefWidth(
+                240
+        );
+
+        card.setMaxWidth(
+                240
+        );
+
+        card.setPrefHeight(
+                70
+        );
+
+        card.setPadding(
+                new Insets(
+                        8,
+                        12,
+                        8,
+                        12
+                )
+        );
+
+        card.setStyle(
+                "-fx-background-color: rgba(255,255,255,0.42);" +
+                "-fx-background-radius: 14px;" +
+                "-fx-border-color: rgba(37,99,235,0.35);" +
+                "-fx-border-width: 1px;" +
+                "-fx-border-radius: 14px;"
+        );
+
+        // =====================================================
+        // HOVER
+        // =====================================================
+
+        card.setOnMouseEntered(
+                e -> {
+
+                    ScaleTransition scale =
+                            new ScaleTransition(
+                                    Duration.millis(180),
+                                    card
+                            );
+
+                    scale.setToX(
+                            1.04
+                    );
+
+                    scale.setToY(
+                            1.04
+                    );
+
+                    scale.play();
+                }
+        );
+
+        card.setOnMouseExited(
+                e -> {
+
+                    ScaleTransition scale =
+                            new ScaleTransition(
+                                    Duration.millis(180),
+                                    card
+                            );
+
+                    scale.setToX(
+                            1.0
+                    );
+
+                    scale.setToY(
+                            1.0
+                    );
+
+                    scale.play();
+                }
+        );
+
+        return card;
+    }
+
+    // =====================================================
+    // ANIMATED TITLE LINE
+    // =====================================================
+
+    private Region createLine() {
+
+        Region line =
+                new Region();
+
+        line.setPrefWidth(
+                45
+        );
+
+        line.setMinWidth(
+                45
+        );
+
+        line.setMaxWidth(
+                45
+        );
+
+        line.setPrefHeight(
+                2
+        );
+
+        line.setMinHeight(
+                2
+        );
+
+        line.setMaxHeight(
+                2
+        );
+
+        line.setStyle(
+                "-fx-background-color: #2563EB;" +
+                "-fx-background-radius: 5px;"
+        );
+
+        ScaleTransition scale =
+                new ScaleTransition(
+                        Duration.seconds(1.4),
+                        line
+                );
+
+        scale.setFromX(
+                0.35
+        );
+
+        scale.setToX(
+                1.0
+        );
+
+        scale.setAutoReverse(
+                true
+        );
+
+        scale.setCycleCount(
+                ScaleTransition.INDEFINITE
+        );
+
+        scale.play();
+
+        return line;
+    }
+
+    // =====================================================
+    // LABEL
+    // =====================================================
+
+    private Label createLabel(
+            String text
+    ) {
 
         Label label =
-                new Label(text);
+                new Label(
+                        text
+                );
 
         label.setStyle(
                 "-fx-font-family: 'Segoe UI';" +
-                "-fx-font-size: 14px;" +
+                "-fx-font-size: 13px;" +
                 "-fx-font-weight: bold;" +
                 "-fx-text-fill: #172033;"
         );
@@ -416,72 +1300,239 @@ public class RegisterPage {
             TextField field
     ) {
 
-        field.setPrefHeight(40);
+        field.setPrefWidth(
+                520
+        );
+
+        field.setMaxWidth(
+                520
+        );
+
+        field.setPrefHeight(
+                39
+        );
 
         field.setStyle(
-                "-fx-background-color: #F7FCFD;" +
-                "-fx-background-radius: 7px;" +
+                "-fx-background-color: rgba(255,255,255,0.92);" +
+                "-fx-background-radius: 8px;" +
                 "-fx-border-color: #B8D4D9;" +
-                "-fx-border-radius: 7px;" +
+                "-fx-border-radius: 8px;" +
                 "-fx-font-family: 'Segoe UI';" +
                 "-fx-font-size: 14px;" +
+                "-fx-text-fill: #172033;" +
+                "-fx-prompt-text-fill: #8A99A8;" +
                 "-fx-padding: 0 12px;"
         );
     }
 
     // =====================================================
-    // BUTTON HOVER
+    // REGISTER BUTTON HOVER
     // =====================================================
 
-    private void addHover(Button button) {
+    private void addRegisterHover(
+            Button button
+    ) {
 
-        button.setOnMouseEntered(e -> {
+        button.setOnMouseEntered(
+                e -> {
 
-            button.setStyle(
-                    "-fx-background-color: #EA580C;" +
-                    "-fx-background-radius: 8px;" +
-                    "-fx-text-fill: white;" +
-                    "-fx-font-family: 'Segoe UI';" +
-                    "-fx-font-size: 16px;" +
-                    "-fx-font-weight: bold;" +
-                    "-fx-cursor: hand;"
-            );
-
-            ScaleTransition scale =
-                    new ScaleTransition(
-                            Duration.millis(150),
-                            button
+                    button.setStyle(
+                            "-fx-background-color: #EA580C;" +
+                            "-fx-background-radius: 9px;" +
+                            "-fx-text-fill: white;" +
+                            "-fx-font-family: 'Segoe UI';" +
+                            "-fx-font-size: 16px;" +
+                            "-fx-font-weight: bold;" +
+                            "-fx-cursor: hand;"
                     );
 
-            scale.setToX(1.03);
-            scale.setToY(1.03);
+                    ScaleTransition scale =
+                            new ScaleTransition(
+                                    Duration.millis(150),
+                                    button
+                            );
 
-            scale.play();
-        });
-
-        button.setOnMouseExited(e -> {
-
-            button.setStyle(
-                    "-fx-background-color: #F97316;" +
-                    "-fx-background-radius: 8px;" +
-                    "-fx-text-fill: white;" +
-                    "-fx-font-family: 'Segoe UI';" +
-                    "-fx-font-size: 16px;" +
-                    "-fx-font-weight: bold;" +
-                    "-fx-cursor: hand;"
-            );
-
-            ScaleTransition scale =
-                    new ScaleTransition(
-                            Duration.millis(150),
-                            button
+                    scale.setToX(
+                            1.03
                     );
 
-            scale.setToX(1.0);
-            scale.setToY(1.0);
+                    scale.setToY(
+                            1.03
+                    );
 
-            scale.play();
-        });
+                    scale.play();
+                }
+        );
+
+        button.setOnMouseExited(
+                e -> {
+
+                    button.setStyle(
+                            "-fx-background-color: #F97316;" +
+                            "-fx-background-radius: 9px;" +
+                            "-fx-text-fill: white;" +
+                            "-fx-font-family: 'Segoe UI';" +
+                            "-fx-font-size: 16px;" +
+                            "-fx-font-weight: bold;" +
+                            "-fx-cursor: hand;"
+                    );
+
+                    ScaleTransition scale =
+                            new ScaleTransition(
+                                    Duration.millis(150),
+                                    button
+                            );
+
+                    scale.setToX(
+                            1.0
+                    );
+
+                    scale.setToY(
+                            1.0
+                    );
+
+                    scale.play();
+                }
+        );
+    }
+
+    // =====================================================
+    // LOGIN LINK HOVER
+    // =====================================================
+
+    private void addLinkHover(
+            Button button
+    ) {
+
+        button.setOnMouseEntered(
+                e -> {
+
+                    button.setStyle(
+                            "-fx-background-color: transparent;" +
+                            "-fx-text-fill: #1D4ED8;" +
+                            "-fx-font-family: 'Segoe UI';" +
+                            "-fx-font-size: 13px;" +
+                            "-fx-font-weight: bold;" +
+                            "-fx-cursor: hand;"
+                    );
+
+                    ScaleTransition scale =
+                            new ScaleTransition(
+                                    Duration.millis(120),
+                                    button
+                            );
+
+                    scale.setToX(
+                            1.05
+                    );
+
+                    scale.setToY(
+                            1.05
+                    );
+
+                    scale.play();
+                }
+        );
+
+        button.setOnMouseExited(
+                e -> {
+
+                    button.setStyle(
+                            "-fx-background-color: transparent;" +
+                            "-fx-text-fill: #2563EB;" +
+                            "-fx-font-family: 'Segoe UI';" +
+                            "-fx-font-size: 13px;" +
+                            "-fx-font-weight: bold;" +
+                            "-fx-cursor: hand;"
+                    );
+
+                    ScaleTransition scale =
+                            new ScaleTransition(
+                                    Duration.millis(120),
+                                    button
+                            );
+
+                    scale.setToX(
+                            1.0
+                    );
+
+                    scale.setToY(
+                            1.0
+                    );
+
+                    scale.play();
+                }
+        );
+    }
+
+    // =====================================================
+    // BACK HOVER
+    // =====================================================
+
+    private void addBackHover(
+            Button button
+    ) {
+
+        button.setOnMouseEntered(
+                e -> {
+
+                    button.setStyle(
+                            "-fx-background-color: rgba(37,99,235,0.10);" +
+                            "-fx-background-radius: 8px;" +
+                            "-fx-text-fill: #2563EB;" +
+                            "-fx-font-family: 'Segoe UI';" +
+                            "-fx-font-size: 14px;" +
+                            "-fx-font-weight: bold;" +
+                            "-fx-cursor: hand;"
+                    );
+
+                    ScaleTransition scale =
+                            new ScaleTransition(
+                                    Duration.millis(150),
+                                    button
+                            );
+
+                    scale.setToX(
+                            1.05
+                    );
+
+                    scale.setToY(
+                            1.05
+                    );
+
+                    scale.play();
+                }
+        );
+
+        button.setOnMouseExited(
+                e -> {
+
+                    button.setStyle(
+                            "-fx-background-color: transparent;" +
+                            "-fx-text-fill: #17345F;" +
+                            "-fx-font-family: 'Segoe UI';" +
+                            "-fx-font-size: 14px;" +
+                            "-fx-font-weight: bold;" +
+                            "-fx-cursor: hand;"
+                    );
+
+                    ScaleTransition scale =
+                            new ScaleTransition(
+                                    Duration.millis(150),
+                                    button
+                            );
+
+                    scale.setToX(
+                            1.0
+                    );
+
+                    scale.setToY(
+                            1.0
+                    );
+
+                    scale.play();
+                }
+        );
     }
 
     // =====================================================

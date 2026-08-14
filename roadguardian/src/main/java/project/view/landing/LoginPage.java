@@ -2,7 +2,11 @@ package project.view.landing;
 
 import project.controller.LoginController;
 
+import javafx.animation.KeyFrame;
+import javafx.animation.KeyValue;
 import javafx.animation.ScaleTransition;
+import javafx.animation.Timeline;
+import javafx.animation.TranslateTransition;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
@@ -11,9 +15,21 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
+import javafx.scene.effect.DropShadow;
+import javafx.scene.image.Image;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundImage;
+import javafx.scene.layout.BackgroundPosition;
+import javafx.scene.layout.BackgroundRepeat;
+import javafx.scene.layout.BackgroundSize;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
+import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.util.Duration;
@@ -21,13 +37,11 @@ import javafx.util.Duration;
 public class LoginPage {
 
     private final BorderPane root;
-
     private final Stage stage;
 
     public LoginPage(Stage stage) {
 
         this.stage = stage;
-
         this.root = new BorderPane();
 
         LoginController controller =
@@ -39,16 +53,83 @@ public class LoginPage {
     private void createPage(LoginController controller) {
 
         // =====================================================
-        // MAIN BACKGROUND
+        // BACKGROUND IMAGE
         // =====================================================
 
-        root.setStyle(
-                "-fx-background-color: #D6F0F3;"
+        Image backgroundImage =
+                new Image(
+                        "file:roadguardian\\src\\main\\resources\\images\\carBg.png"
+                );
+
+        System.out.println(
+                "Login Background Error: "
+                        + backgroundImage.isError()
         );
 
+        BackgroundImage background =
+                new BackgroundImage(
+                        backgroundImage,
+                        BackgroundRepeat.NO_REPEAT,
+                        BackgroundRepeat.NO_REPEAT,
+                        BackgroundPosition.CENTER,
+                        new BackgroundSize(
+                                1.0,
+                                1.0,
+                                true,
+                                true,
+                                false,
+                                true
+                        )
+                );
+
+        root.setBackground(
+                new Background(background)
+        );
 
         // =====================================================
-        // LOGO
+        // BACK BUTTON
+        // =====================================================
+
+        Button backButton =
+                new Button("← Back");
+
+        backButton.setPrefWidth(115);
+        backButton.setPrefHeight(44);
+
+        backButton.setStyle(
+                "-fx-background-color: #F97316;" +
+                "-fx-background-radius: 10px;" +
+                "-fx-text-fill: white;" +
+                "-fx-font-family: 'Segoe UI';" +
+                "-fx-font-size: 15px;" +
+                "-fx-font-weight: bold;" +
+                "-fx-cursor: hand;"
+        );
+
+        HBox topBar =
+                new HBox(
+                        backButton
+                );
+
+        topBar.setAlignment(
+                Pos.TOP_LEFT
+        );
+
+        topBar.setPadding(
+                new Insets(
+                        20,
+                        25,
+                        10,
+                        25
+                )
+        );
+
+        topBar.setStyle(
+                "-fx-background-color: transparent;"
+        );
+
+        // =====================================================
+        // ROADGUARDIAN LOGO
         // =====================================================
 
         Text roadText =
@@ -73,6 +154,7 @@ public class LoginPage {
 
         HBox logo =
                 new HBox(
+                        0,
                         roadText,
                         guardianText
                 );
@@ -81,22 +163,23 @@ public class LoginPage {
                 Pos.CENTER
         );
 
-
         // =====================================================
-        // WELCOME TEXT
+        // WELCOME HEADING
         // =====================================================
 
         Text heading =
-                new Text(
-                        "Welcome Back"
-                );
+                new Text("Welcome Back");
 
         heading.setStyle(
                 "-fx-font-family: 'Segoe UI';" +
-                "-fx-font-size: 32px;" +
+                "-fx-font-size: 30px;" +
                 "-fx-font-weight: bold;" +
                 "-fx-fill: #172033;"
         );
+
+        // =====================================================
+        // SUBTITLE
+        // =====================================================
 
         Text subtitle =
                 new Text(
@@ -109,9 +192,8 @@ public class LoginPage {
                 "-fx-fill: #526274;"
         );
 
-
         // =====================================================
-        // EMAIL LABEL
+        // EMAIL
         // =====================================================
 
         Label emailLabel =
@@ -124,11 +206,6 @@ public class LoginPage {
                 "-fx-text-fill: #172033;"
         );
 
-
-        // =====================================================
-        // EMAIL FIELD
-        // =====================================================
-
         TextField emailField =
                 new TextField();
 
@@ -136,23 +213,24 @@ public class LoginPage {
                 "Enter your email"
         );
 
-        emailField.setPrefHeight(
-                42
-        );
+        emailField.setPrefWidth(380);
+        emailField.setMaxWidth(380);
+        emailField.setPrefHeight(42);
 
         emailField.setStyle(
-                "-fx-background-color: #F7FCFD;" +
-                "-fx-background-radius: 7px;" +
+                "-fx-background-color: rgba(255,255,255,0.97);" +
+                "-fx-background-radius: 8px;" +
                 "-fx-border-color: #B8D4D9;" +
-                "-fx-border-radius: 7px;" +
+                "-fx-border-radius: 8px;" +
                 "-fx-font-family: 'Segoe UI';" +
                 "-fx-font-size: 14px;" +
+                "-fx-text-fill: #172033;" +
+                "-fx-prompt-text-fill: #8A99A8;" +
                 "-fx-padding: 0 12px;"
         );
 
-
         // =====================================================
-        // PASSWORD LABEL
+        // PASSWORD
         // =====================================================
 
         Label passwordLabel =
@@ -165,11 +243,6 @@ public class LoginPage {
                 "-fx-text-fill: #172033;"
         );
 
-
-        // =====================================================
-        // PASSWORD FIELD
-        // =====================================================
-
         PasswordField passwordField =
                 new PasswordField();
 
@@ -177,23 +250,24 @@ public class LoginPage {
                 "Enter your password"
         );
 
-        passwordField.setPrefHeight(
-                42
-        );
+        passwordField.setPrefWidth(380);
+        passwordField.setMaxWidth(380);
+        passwordField.setPrefHeight(42);
 
         passwordField.setStyle(
-                "-fx-background-color: #F7FCFD;" +
-                "-fx-background-radius: 7px;" +
+                "-fx-background-color: rgba(255,255,255,0.97);" +
+                "-fx-background-radius: 8px;" +
                 "-fx-border-color: #B8D4D9;" +
-                "-fx-border-radius: 7px;" +
+                "-fx-border-radius: 8px;" +
                 "-fx-font-family: 'Segoe UI';" +
                 "-fx-font-size: 14px;" +
+                "-fx-text-fill: #172033;" +
+                "-fx-prompt-text-fill: #8A99A8;" +
                 "-fx-padding: 0 12px;"
         );
 
-
         // =====================================================
-        // LOGIN AS LABEL
+        // LOGIN AS
         // =====================================================
 
         Label roleLabel =
@@ -206,11 +280,6 @@ public class LoginPage {
                 "-fx-text-fill: #172033;"
         );
 
-
-        // =====================================================
-        // ROLE SELECTION
-        // =====================================================
-
         ComboBox<String> roleBox =
                 new ComboBox<>();
 
@@ -219,29 +288,21 @@ public class LoginPage {
                 "Mechanic"
         );
 
-        // Default User
-        roleBox.setValue(
-                "User"
-        );
+        roleBox.setValue("User");
 
-        roleBox.setPrefWidth(
-                360
-        );
-
-        roleBox.setPrefHeight(
-                42
-        );
+        roleBox.setPrefWidth(380);
+        roleBox.setMaxWidth(380);
+        roleBox.setPrefHeight(42);
 
         roleBox.setStyle(
-                "-fx-background-color: #F7FCFD;" +
-                "-fx-background-radius: 7px;" +
+                "-fx-background-color: rgba(255,255,255,0.97);" +
+                "-fx-background-radius: 8px;" +
                 "-fx-border-color: #B8D4D9;" +
-                "-fx-border-radius: 7px;" +
+                "-fx-border-radius: 8px;" +
                 "-fx-font-family: 'Segoe UI';" +
                 "-fx-font-size: 14px;" +
                 "-fx-font-weight: bold;"
         );
-
 
         // =====================================================
         // FORGOT PASSWORD
@@ -268,6 +329,8 @@ public class LoginPage {
                 Pos.CENTER_RIGHT
         );
 
+        forgotBox.setPrefWidth(380);
+        forgotBox.setMaxWidth(380);
 
         // =====================================================
         // LOGIN BUTTON
@@ -276,17 +339,13 @@ public class LoginPage {
         Button loginButton =
                 new Button("Login");
 
-        loginButton.setPrefWidth(
-                360
-        );
-
-        loginButton.setPrefHeight(
-                45
-        );
+        loginButton.setPrefWidth(380);
+        loginButton.setMaxWidth(380);
+        loginButton.setPrefHeight(46);
 
         loginButton.setStyle(
                 "-fx-background-color: #F97316;" +
-                "-fx-background-radius: 8px;" +
+                "-fx-background-radius: 9px;" +
                 "-fx-text-fill: white;" +
                 "-fx-font-family: 'Segoe UI';" +
                 "-fx-font-size: 16px;" +
@@ -294,9 +353,8 @@ public class LoginPage {
                 "-fx-cursor: hand;"
         );
 
-
         // =====================================================
-        // REGISTER TEXT
+        // CREATE ACCOUNT
         // =====================================================
 
         Text accountText =
@@ -333,7 +391,6 @@ public class LoginPage {
                 Pos.CENTER
         );
 
-
         // =====================================================
         // LOGIN FORM
         // =====================================================
@@ -341,6 +398,7 @@ public class LoginPage {
         VBox loginForm =
                 new VBox(
                         8,
+
                         emailLabel,
                         emailField,
 
@@ -351,7 +409,9 @@ public class LoginPage {
                         roleBox,
 
                         forgotBox,
+
                         loginButton,
+
                         registerBox
                 );
 
@@ -359,18 +419,16 @@ public class LoginPage {
                 Pos.CENTER_LEFT
         );
 
-        loginForm.setPrefWidth(
-                360
-        );
-
+        loginForm.setPrefWidth(380);
+        loginForm.setMaxWidth(380);
 
         // =====================================================
-        // CARD
+        // LOGIN CARD
         // =====================================================
 
         VBox loginCard =
                 new VBox(
-                        22,
+                        18,
                         logo,
                         heading,
                         subtitle,
@@ -381,83 +439,313 @@ public class LoginPage {
                 Pos.CENTER
         );
 
-        loginCard.setPrefWidth(
-                460
-        );
+        loginCard.setPrefWidth(480);
+        loginCard.setMinWidth(480);
+        loginCard.setMaxWidth(480);
+
+        loginCard.setPrefHeight(590);
+        loginCard.setMinHeight(590);
+        loginCard.setMaxHeight(590);
 
         loginCard.setPadding(
                 new Insets(
-                        40,
-                        50,
-                        40,
-                        50
+                        32,
+                        45,
+                        32,
+                        45
                 )
         );
 
         loginCard.setStyle(
-                "-fx-background-color: rgba(238,249,250,0.96);" +
-                "-fx-background-radius: 18px;" +
-                "-fx-border-color: #B8D4D9;" +
-                "-fx-border-radius: 18px;"
+                "-fx-background-color: rgba(249,249,249,0.90);" +
+                "-fx-background-radius: 20px;"
         );
 
-
         // =====================================================
-        // CENTER AREA
+        // ANIMATED BORDER
         // =====================================================
 
-        VBox centerContent =
-                new VBox(
-                        loginCard
+        Rectangle animatedBorder =
+                new Rectangle(
+                        480,
+                        590
                 );
 
-        centerContent.setAlignment(
+        animatedBorder.setArcWidth(40);
+        animatedBorder.setArcHeight(40);
+
+        animatedBorder.setFill(
+                Color.TRANSPARENT
+        );
+
+        animatedBorder.setStroke(
+                Color.rgb(
+                        27,
+                        199,
+                        195,
+                        0.80
+                )
+        );
+
+        animatedBorder.setStrokeWidth(2.5);
+
+        animatedBorder.getStrokeDashArray().setAll(
+                18.0,
+                9.0,
+                4.0,
+                9.0
+        );
+
+        animatedBorder.setMouseTransparent(true);
+
+        // =====================================================
+        // BORDER GLOW
+        // =====================================================
+
+        DropShadow borderGlow =
+                new DropShadow();
+
+        borderGlow.setColor(
+                Color.rgb(
+                        227,
+                        99,
+                        15,
+                        0.65
+                )
+        );
+
+        borderGlow.setRadius(10);
+        borderGlow.setSpread(0.10);
+
+        animatedBorder.setEffect(
+                borderGlow
+        );
+
+        // =====================================================
+        // RUNNING BORDER ANIMATION
+        // =====================================================
+
+        Timeline borderAnimation =
+                new Timeline(
+                        new KeyFrame(
+                                Duration.ZERO,
+                                new KeyValue(
+                                        animatedBorder.strokeDashOffsetProperty(),
+                                        0
+                                )
+                        ),
+                        new KeyFrame(
+                                Duration.seconds(2.2),
+                                new KeyValue(
+                                        animatedBorder.strokeDashOffsetProperty(),
+                                        -60
+                                )
+                        )
+                );
+
+        borderAnimation.setCycleCount(
+                Timeline.INDEFINITE
+        );
+
+        borderAnimation.play();
+
+        // =====================================================
+        // BORDER GLOW PULSE
+        // =====================================================
+
+        Timeline cardGlowAnimation =
+                new Timeline(
+                        new KeyFrame(
+                                Duration.ZERO,
+                                new KeyValue(
+                                        borderGlow.radiusProperty(),
+                                        8
+                                )
+                        ),
+                        new KeyFrame(
+                                Duration.seconds(1.4),
+                                new KeyValue(
+                                        borderGlow.radiusProperty(),
+                                        20
+                                )
+                        ),
+                        new KeyFrame(
+                                Duration.seconds(2.8),
+                                new KeyValue(
+                                        borderGlow.radiusProperty(),
+                                        8
+                                )
+                        )
+                );
+
+        cardGlowAnimation.setCycleCount(
+                Timeline.INDEFINITE
+        );
+
+        cardGlowAnimation.play();
+
+        // =====================================================
+        // LOGIN CARD STACK
+        // =====================================================
+
+        StackPane loginCardStack =
+                new StackPane();
+
+        loginCardStack.setPrefWidth(480);
+        loginCardStack.setMinWidth(480);
+        loginCardStack.setMaxWidth(480);
+
+        loginCardStack.setPrefHeight(590);
+        loginCardStack.setMinHeight(590);
+        loginCardStack.setMaxHeight(590);
+
+        loginCardStack.getChildren().addAll(
+                animatedBorder,
+                loginCard
+        );
+
+        // =====================================================
+        // SAFETY TITLE
+        // =====================================================
+
+        Text safetyTitle =
+                new Text(
+                        "Your Safety. Our Priority."
+                );
+
+        safetyTitle.setStyle(
+                "-fx-font-family: 'Segoe UI';" +
+                "-fx-font-size: 30px;" +
+                "-fx-font-weight: bold;" +
+                "-fx-fill: #172033;"
+        );
+
+        // =====================================================
+        // TITLE LINES
+        // =====================================================
+
+        Region leftLine =
+                createLine();
+
+        Region rightLine =
+                createLine();
+
+        HBox safetyHeader =
+                new HBox(
+                        18,
+                        leftLine,
+                        safetyTitle,
+                        rightLine
+                );
+
+        safetyHeader.setAlignment(
                 Pos.CENTER
         );
 
-        centerContent.setPadding(
-                new Insets(
-                        30
-                )
+        safetyHeader.setFillHeight(
+                false
         );
 
-
         // =====================================================
-        // BACK BUTTON
+        // SERVICE CARDS
         // =====================================================
 
-        Button backButton =
-                new Button("← Back");
-
-        backButton.setStyle(
-                "-fx-background-color: #F97316;" +
-                "-fx-background-radius: 7px;" +
-                "-fx-text-fill: white;" +
-                "-fx-font-family: 'Segoe UI';" +
-                "-fx-font-size: 14px;" +
-                "-fx-font-weight: bold;" +
-                "-fx-padding: 9px 22px;" +
-                "-fx-cursor: hand;"
-        );
-
-        HBox topBar =
-                new HBox(
-                        backButton
+        VBox roadside =
+                createServiceCard(
+                        "⚒",
+                        "Roadside",
+                        "Assistance"
                 );
 
-        topBar.setAlignment(
-                Pos.CENTER_LEFT
+        VBox mechanics =
+                createServiceCard(
+                        "⚙",
+                        "Expert",
+                        "Mechanics"
+                );
+
+        VBox safe =
+                createServiceCard(
+                        "✓",
+                        "Safe &",
+                        "Reliable"
+                );
+
+        VBox support =
+                createServiceCard(
+                        "◉",
+                        "24/7",
+                        "Support"
+                );
+
+        HBox serviceCards =
+                new HBox(
+                        18,
+                        roadside,
+                        mechanics,
+                        safe,
+                        support
+                );
+
+        serviceCards.setAlignment(
+                Pos.CENTER
         );
 
-        topBar.setPadding(
+        // =====================================================
+        // RIGHT CONTENT
+        // =====================================================
+
+        VBox rightContent =
+                new VBox(
+                        28,
+                        safetyHeader,
+                        serviceCards
+                );
+
+        rightContent.setAlignment(
+                Pos.TOP_CENTER
+        );
+
+        rightContent.setPrefWidth(700);
+        rightContent.setMaxWidth(700);
+
+        /*
+         * Move complete safety section toward top.
+         */
+        rightContent.setTranslateY(-35);
+
+        rightContent.setPadding(
                 new Insets(
-                        18,
-                        25,
-                        5,
-                        25
+                        10,
+                        20,
+                        20,
+                        20
                 )
         );
 
+        // =====================================================
+        // MAIN CONTENT
+        // =====================================================
+
+        HBox mainContent =
+                new HBox(
+                        70,
+                        loginCardStack,
+                        rightContent
+                );
+
+        mainContent.setAlignment(
+                Pos.CENTER
+        );
+
+        mainContent.setPadding(
+                new Insets(
+                        10,
+                        45,
+                        10,
+                        45
+                )
+        );
 
         // =====================================================
         // FOOTER
@@ -484,28 +772,24 @@ public class LoginPage {
         );
 
         footer.setPadding(
-                new Insets(
-                        12
-                )
+                new Insets(10)
         );
 
         footer.setStyle(
-                "-fx-background-color: #DFF3F5;" +
-                "-fx-border-color: #B8D4D9;" +
+                "-fx-background-color: rgba(223,243,245,0.82);" +
+                "-fx-border-color: rgba(184,212,217,0.65);" +
                 "-fx-border-width: 1 0 0 0;"
         );
 
-
         // =====================================================
-        // HOVER
+        // HOVER EFFECTS
         // =====================================================
 
         addLoginHover(
                 loginButton
-                
         );
 
-        backButtonHover(
+        addBackHover(
                 backButton
         );
 
@@ -520,25 +804,21 @@ public class LoginPage {
                         roleBox.getValue()
                 )
         );
-     
 
         registerButton.setOnAction(
                 e -> controller.openRegisterPage()
         );
 
-
         forgotPasswordButton.setOnAction(
                 e -> controller.openForgotPasswordPage()
         );
-
 
         backButton.setOnAction(
                 e -> controller.goBack()
         );
 
-
         // =====================================================
-        // PAGE LAYOUT
+        // ROOT LAYOUT
         // =====================================================
 
         root.setTop(
@@ -546,7 +826,7 @@ public class LoginPage {
         );
 
         root.setCenter(
-                centerContent
+                mainContent
         );
 
         root.setBottom(
@@ -554,6 +834,321 @@ public class LoginPage {
         );
     }
 
+    // =====================================================
+    // SERVICE CARD
+    // =====================================================
+
+    private VBox createServiceCard(
+            String iconText,
+            String line1,
+            String line2
+    ) {
+
+        // =====================================================
+        // ICON CIRCLE
+        // =====================================================
+
+        Circle iconCircle =
+                new Circle(42);
+
+        iconCircle.setFill(
+                Color.rgb(
+                        235,
+                        247,
+                        255,
+                        0.65
+                )
+        );
+
+        iconCircle.setStroke(
+                Color.rgb(
+                        37,
+                        99,
+                        235,
+                        0.75
+                )
+        );
+
+        iconCircle.setStrokeWidth(2);
+
+        // =====================================================
+        // ICON
+        // =====================================================
+
+        Text icon =
+                new Text(iconText);
+
+        icon.setStyle(
+                "-fx-font-family: 'Segoe UI Symbol';" +
+                "-fx-font-size: 30px;" +
+                "-fx-font-weight: bold;" +
+                "-fx-fill: #2563EB;"
+        );
+
+        StackPane iconContainer =
+                new StackPane(
+                        iconCircle,
+                        icon
+                );
+
+        // =====================================================
+        // ICON GLOW
+        // =====================================================
+
+        DropShadow glow =
+                new DropShadow();
+
+        glow.setColor(
+                Color.rgb(
+                        37,
+                        99,
+                        235,
+                        0.85
+                )
+        );
+
+        glow.setRadius(8);
+        glow.setSpread(0.15);
+
+        iconCircle.setEffect(
+                glow
+        );
+
+        // =====================================================
+        // GLOW ANIMATION
+        // =====================================================
+
+        Timeline glowAnimation =
+                new Timeline(
+                        new KeyFrame(
+                                Duration.ZERO,
+                                new KeyValue(
+                                        glow.radiusProperty(),
+                                        7
+                                ),
+                                new KeyValue(
+                                        iconCircle.opacityProperty(),
+                                        0.65
+                                )
+                        ),
+                        new KeyFrame(
+                                Duration.seconds(1.2),
+                                new KeyValue(
+                                        glow.radiusProperty(),
+                                        20
+                                ),
+                                new KeyValue(
+                                        iconCircle.opacityProperty(),
+                                        1.0
+                                )
+                        ),
+                        new KeyFrame(
+                                Duration.seconds(2.4),
+                                new KeyValue(
+                                        glow.radiusProperty(),
+                                        7
+                                ),
+                                new KeyValue(
+                                        iconCircle.opacityProperty(),
+                                        0.65
+                                )
+                        )
+                );
+
+        glowAnimation.setCycleCount(
+                Timeline.INDEFINITE
+        );
+
+        glowAnimation.play();
+
+        // =====================================================
+        // FLOATING ANIMATION
+        // =====================================================
+
+        TranslateTransition floating =
+                new TranslateTransition(
+                        Duration.seconds(2.2),
+                        iconContainer
+                );
+
+        floating.setFromY(0);
+        floating.setToY(-5);
+
+        floating.setAutoReverse(true);
+
+        floating.setCycleCount(
+                TranslateTransition.INDEFINITE
+        );
+
+        floating.play();
+
+        // =====================================================
+        // SERVICE TEXT
+        // =====================================================
+
+        Text firstText =
+                new Text(line1);
+
+        firstText.setStyle(
+                "-fx-font-family: 'Segoe UI';" +
+                "-fx-font-size: 15px;" +
+                "-fx-font-weight: bold;" +
+                "-fx-fill: #172033;"
+        );
+
+        Text secondText =
+                new Text(line2);
+
+        secondText.setStyle(
+                "-fx-font-family: 'Segoe UI';" +
+                "-fx-font-size: 15px;" +
+                "-fx-font-weight: bold;" +
+                "-fx-fill: #172033;"
+        );
+
+        VBox textBox =
+                new VBox(
+                        2,
+                        firstText,
+                        secondText
+                );
+
+        textBox.setAlignment(
+                Pos.CENTER
+        );
+
+        // =====================================================
+        // SERVICE CARD
+        // =====================================================
+
+        VBox card =
+                new VBox(
+                        14,
+                        iconContainer,
+                        textBox
+                );
+
+        card.setAlignment(
+                Pos.CENTER
+        );
+
+        card.setPrefWidth(125);
+        card.setMinWidth(125);
+        card.setMaxWidth(125);
+
+        card.setPrefHeight(190);
+        card.setMinHeight(190);
+        card.setMaxHeight(190);
+
+        card.setPadding(
+                new Insets(
+                        10,
+                        8,
+                        10,
+                        8
+                )
+        );
+
+        /*
+         * No translate here.
+         * The complete safety section is moved
+         * using rightContent.setTranslateY().
+         */
+
+        card.setTranslateY(0);
+
+        card.setStyle(
+                "-fx-background-color: rgba(240,249,255,0.18);" +
+                "-fx-background-radius: 16px;" +
+                "-fx-border-color: rgba(37,99,235,0.45);" +
+                "-fx-border-width: 1px;" +
+                "-fx-border-radius: 16px;"
+        );
+
+        // =====================================================
+        // CARD HOVER
+        // =====================================================
+
+        card.setOnMouseEntered(
+                e -> {
+
+                    ScaleTransition scale =
+                            new ScaleTransition(
+                                    Duration.millis(180),
+                                    card
+                            );
+
+                    scale.setToX(1.06);
+                    scale.setToY(1.06);
+
+                    scale.play();
+                }
+        );
+
+        card.setOnMouseExited(
+                e -> {
+
+                    ScaleTransition scale =
+                            new ScaleTransition(
+                                    Duration.millis(180),
+                                    card
+                            );
+
+                    scale.setToX(1.0);
+                    scale.setToY(1.0);
+
+                    scale.play();
+                }
+        );
+
+        return card;
+    }
+
+    // =====================================================
+    // TITLE LINE
+    // =====================================================
+
+    private Region createLine() {
+
+        Region line =
+                new Region();
+
+        line.setPrefWidth(70);
+        line.setMinWidth(70);
+        line.setMaxWidth(70);
+
+        line.setPrefHeight(2);
+        line.setMinHeight(2);
+        line.setMaxHeight(2);
+
+        line.setStyle(
+                "-fx-background-color: #2563EB;" +
+                "-fx-background-radius: 5px;"
+        );
+
+        // =====================================================
+        // LINE ANIMATION
+        // =====================================================
+
+        ScaleTransition scale =
+                new ScaleTransition(
+                        Duration.seconds(1.4),
+                        line
+                );
+
+        scale.setFromX(0.45);
+        scale.setToX(1.0);
+
+        scale.setAutoReverse(true);
+
+        scale.setCycleCount(
+                ScaleTransition.INDEFINITE
+        );
+
+        scale.play();
+
+        return line;
+    }
 
     // =====================================================
     // LOGIN BUTTON HOVER
@@ -568,7 +1163,7 @@ public class LoginPage {
 
                     button.setStyle(
                             "-fx-background-color: #EA580C;" +
-                            "-fx-background-radius: 8px;" +
+                            "-fx-background-radius: 9px;" +
                             "-fx-text-fill: white;" +
                             "-fx-font-family: 'Segoe UI';" +
                             "-fx-font-size: 16px;" +
@@ -589,13 +1184,12 @@ public class LoginPage {
                 }
         );
 
-
         button.setOnMouseExited(
                 e -> {
 
                     button.setStyle(
                             "-fx-background-color: #F97316;" +
-                            "-fx-background-radius: 8px;" +
+                            "-fx-background-radius: 9px;" +
                             "-fx-text-fill: white;" +
                             "-fx-font-family: 'Segoe UI';" +
                             "-fx-font-size: 16px;" +
@@ -617,7 +1211,11 @@ public class LoginPage {
         );
     }
 
-        private void backButtonHover(
+    // =====================================================
+    // BACK BUTTON HOVER
+    // =====================================================
+
+    private void addBackHover(
             Button button
     ) {
 
@@ -626,10 +1224,10 @@ public class LoginPage {
 
                     button.setStyle(
                             "-fx-background-color: #EA580C;" +
-                            "-fx-background-radius: 8px;" +
+                            "-fx-background-radius: 9px;" +
                             "-fx-text-fill: white;" +
                             "-fx-font-family: 'Segoe UI';" +
-                            "-fx-font-size: 16px;" +
+                            "-fx-font-size: 14px;" +
                             "-fx-font-weight: bold;" +
                             "-fx-cursor: hand;"
                     );
@@ -640,23 +1238,22 @@ public class LoginPage {
                                     button
                             );
 
-                    scale.setToX(1.03);
-                    scale.setToY(1.03);
+                    scale.setToX(1.05);
+                    scale.setToY(1.05);
 
                     scale.play();
                 }
         );
-
 
         button.setOnMouseExited(
                 e -> {
 
                     button.setStyle(
                             "-fx-background-color: #F97316;" +
-                            "-fx-background-radius: 8px;" +
+                            "-fx-background-radius: 9px;" +
                             "-fx-text-fill: white;" +
                             "-fx-font-family: 'Segoe UI';" +
-                            "-fx-font-size: 16px;" +
+                            "-fx-font-size: 14px;" +
                             "-fx-font-weight: bold;" +
                             "-fx-cursor: hand;"
                     );
@@ -674,7 +1271,6 @@ public class LoginPage {
                 }
         );
     }
-
 
     // =====================================================
     // GET VIEW
