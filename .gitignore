@@ -1,3 +1,22 @@
 target/
 .vscode/
 *.class
+cat > .gitignore <<'EOF'
+target/
+*.class
+
+.idea/workspace.xml
+.idea/
+.vscode/
+
+cp.txt
+javafx.application.Application
+javafx.stage.Stage
+project.ui.admin.AdminSelection
+EOF
+# Secrets / local configuration
+guardian.json
+
+# IDE configuration
+.idea/
+.vscode/
