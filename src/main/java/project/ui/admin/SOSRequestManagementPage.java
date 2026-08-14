@@ -13,49 +13,48 @@ import javafx.scene.text.FontWeight;
 
 import com.google.cloud.firestore.Firestore;
 
-import project.controller.admin.ServiceRequestController;
+import project.controller.admin.SOSRequestController;
 import project.controller.admin.MechanicController;
 import project.firebase.FirebaseConfig;
-import project.model.ServiceRequest;
+import project.model.SOSRequest;
 import project.model.Mechanic;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-public class ServiceRequestManagementPage extends AdminSectionPage {
+public class SOSRequestManagementPage extends AdminSectionPage {
 
-    // =========================================================
+    // =====================================================
     // AQUA MIST THEME
-    // =========================================================
+    // =====================================================
 
     private static final String BG = "#D6F0F3";
     private static final String SURFACE = "#EEF9FA";
     private static final String SECONDARY = "#DFF3F5";
 
-    private static final String ORANGE = "#F97316";
-    private static final String ORANGE_HOVER = "#EA580C";
-
     private static final String HEADING = "#172033";
     private static final String TEXT = "#526274";
 
     private static final String BLUE = "#2563EB";
+    private static final String ORANGE = "#F97316";
+    private static final String ORANGE_HOVER = "#EA580C";
     private static final String GREEN = "#16A34A";
     private static final String RED = "#DC2626";
 
     private static final String BORDER = "#B8D4D9";
 
-    // =========================================================
+    // =====================================================
     // FIELDS
-    // =========================================================
+    // =====================================================
 
-    private ServiceRequestController controller;
+    private SOSRequestController controller;
     private MechanicController mechanicController;
 
-    private final ObservableList<ServiceRequest> requestList =
+    private final ObservableList<SOSRequest> sosList =
             FXCollections.observableArrayList();
 
-    private final List<ServiceRequest> allRequests =
+    private final List<SOSRequest> allRequests =
             new ArrayList<>();
 
     private VBox requestCards;
@@ -70,11 +69,11 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
     private Label pendingLabel;
     private Label acceptedLabel;
     private Label progressLabel;
-    private Label completedLabel;
+    private Label resolvedLabel;
 
-    // =========================================================
+    // =====================================================
     // VIEW
-    // =========================================================
+    // =====================================================
 
     @Override
     public VBox getView() {
@@ -86,9 +85,7 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
         );
 
         root.setStyle(
-                "-fx-background-color: " +
-                BG +
-                ";"
+                "-fx-background-color: " + BG + ";"
         );
 
         try {
@@ -97,7 +94,7 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
                     FirebaseConfig.getFirestore();
 
             controller =
-                    new ServiceRequestController(
+                    new SOSRequestController(
                             firestore
                     );
 
@@ -115,17 +112,16 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
             );
         }
 
-        VBox header = createHeader();
-        HBox statistics = createStatistics();
-        HBox toolbar = createToolbar();
-        VBox recordsCard = createRecordsCard();
-
         root.getChildren().addAll(
-                header,
-                statistics,
-                toolbar,
-                recordsCard
+                createHeader(),
+                createStatistics(),
+                createToolbar(),
+                createRecordsCard()
         );
+
+        VBox recordsCard =
+                (VBox) root.getChildren()
+                        .get(root.getChildren().size() - 1);
 
         VBox.setVgrow(
                 recordsCard,
@@ -137,20 +133,18 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
         return root;
     }
 
-    // =========================================================
+    // =====================================================
     // HEADER
-    // =========================================================
+    // =====================================================
 
     private VBox createHeader() {
 
         VBox header = new VBox(7);
 
         Label title =
-                new Label("Service Requests");
+                new Label("SOS Emergency Requests");
 
-        title.setTextFill(
-                Color.web(HEADING)
-        );
+        title.setTextFill(Color.web(HEADING));
 
         title.setFont(
                 Font.font(
@@ -162,18 +156,13 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
 
         Label subtitle =
                 new Label(
-                        "Monitor roadside assistance requests, track progress, and manage mechanic assignments."
+                        "Monitor emergency roadside assistance requests, track response status, and manage urgent mechanic assignments."
                 );
 
-        subtitle.setTextFill(
-                Color.web(TEXT)
-        );
+        subtitle.setTextFill(Color.web(TEXT));
 
         subtitle.setFont(
-                Font.font(
-                        "Arial",
-                        16
-                )
+                Font.font("Arial", 16)
         );
 
         header.getChildren().addAll(
@@ -184,9 +173,9 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
         return header;
     }
 
-    // =========================================================
+    // =====================================================
     // STATISTICS
-    // =========================================================
+    // =====================================================
 
     private HBox createStatistics() {
 
@@ -196,12 +185,12 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
         pendingLabel = createValueLabel(ORANGE);
         acceptedLabel = createValueLabel(BLUE);
         progressLabel = createValueLabel(ORANGE);
-        completedLabel = createValueLabel(GREEN);
+        resolvedLabel = createValueLabel(GREEN);
 
         VBox total =
                 createStatCard(
-                        "Total Requests",
-                        "All service requests",
+                        "Total SOS",
+                        "All emergency requests",
                         totalLabel,
                         BLUE,
                         "TOTAL"
@@ -210,7 +199,7 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
         VBox pending =
                 createStatCard(
                         "Pending",
-                        "Waiting for action",
+                        "Waiting for response",
                         pendingLabel,
                         ORANGE,
                         "PENDING"
@@ -228,17 +217,17 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
         VBox progress =
                 createStatCard(
                         "In Progress",
-                        "Service underway",
+                        "Emergency assistance",
                         progressLabel,
                         ORANGE,
                         "ACTIVE"
                 );
 
-        VBox completed =
+        VBox resolved =
                 createStatCard(
-                        "Completed",
-                        "Successfully finished",
-                        completedLabel,
+                        "Resolved",
+                        "Emergency completed",
+                        resolvedLabel,
                         GREEN,
                         "DONE"
                 );
@@ -247,28 +236,24 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
         HBox.setHgrow(pending, Priority.ALWAYS);
         HBox.setHgrow(accepted, Priority.ALWAYS);
         HBox.setHgrow(progress, Priority.ALWAYS);
-        HBox.setHgrow(completed, Priority.ALWAYS);
+        HBox.setHgrow(resolved, Priority.ALWAYS);
 
         box.getChildren().addAll(
                 total,
                 pending,
                 accepted,
                 progress,
-                completed
+                resolved
         );
 
         return box;
     }
 
-    private Label createValueLabel(
-            String color
-    ) {
+    private Label createValueLabel(String color) {
 
         Label label = new Label("0");
 
-        label.setTextFill(
-                Color.web(color)
-        );
+        label.setTextFill(Color.web(color));
 
         label.setFont(
                 Font.font(
@@ -292,31 +277,20 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
         VBox card = new VBox(9);
 
         card.setPadding(
-                new Insets(
-                        20,
-                        22,
-                        18,
-                        22
-                )
+                new Insets(20, 22, 18, 22)
         );
 
         card.setMinHeight(130);
 
         String normalStyle =
-                "-fx-background-color: " +
-                SURFACE +
-                ";" +
-                "-fx-border-color: " +
-                BORDER +
-                ";" +
+                "-fx-background-color: " + SURFACE + ";" +
+                "-fx-border-color: " + BORDER + ";" +
                 "-fx-border-radius: 14;" +
                 "-fx-background-radius: 14;";
 
         String hoverStyle =
                 "-fx-background-color: #F7FCFC;" +
-                "-fx-border-color: " +
-                BLUE +
-                ";" +
+                "-fx-border-color: " + color + ";" +
                 "-fx-border-radius: 14;" +
                 "-fx-background-radius: 14;" +
                 "-fx-effect: dropshadow(gaussian, rgba(37,99,235,0.14), 10, 0.12, 0, 2);";
@@ -326,16 +300,12 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
 
         HBox top = new HBox();
 
-        top.setAlignment(
-                Pos.CENTER_LEFT
-        );
+        top.setAlignment(Pos.CENTER_LEFT);
 
         Label titleLabel =
                 new Label(title);
 
-        titleLabel.setTextFill(
-                Color.web(HEADING)
-        );
+        titleLabel.setTextFill(Color.web(HEADING));
 
         titleLabel.setFont(
                 Font.font(
@@ -354,9 +324,7 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
 
         Label tag = new Label(tagText);
 
-        tag.setTextFill(
-                Color.web(color)
-        );
+        tag.setTextFill(Color.web(color));
 
         tag.setFont(
                 Font.font(
@@ -386,15 +354,10 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
         Label subtitleLabel =
                 new Label(subtitle);
 
-        subtitleLabel.setTextFill(
-                Color.web(TEXT)
-        );
+        subtitleLabel.setTextFill(Color.web(TEXT));
 
         subtitleLabel.setFont(
-                Font.font(
-                        "Arial",
-                        14
-                )
+                Font.font("Arial", 14)
         );
 
         card.getChildren().addAll(
@@ -420,25 +383,23 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
         return card;
     }
 
-    // =========================================================
+    // =====================================================
     // TOOLBAR
-    // =========================================================
+    // =====================================================
 
     private HBox createToolbar() {
 
         HBox toolbar = new HBox(12);
 
-        toolbar.setAlignment(
-                Pos.CENTER_LEFT
-        );
+        toolbar.setAlignment(Pos.CENTER_LEFT);
 
         searchField = new TextField();
 
         searchField.setPromptText(
-                "Search request, customer, vehicle, mechanic..."
+                "Search SOS, customer, vehicle, emergency, location..."
         );
 
-        searchField.setPrefWidth(390);
+        searchField.setPrefWidth(400);
         searchField.setPrefHeight(44);
 
         styleTextField(searchField);
@@ -450,7 +411,7 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
                 "Pending",
                 "Accepted",
                 "In Progress",
-                "Completed",
+                "Resolved",
                 "Cancelled"
         );
 
@@ -467,7 +428,7 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
                 "Oldest First",
                 "Customer A-Z",
                 "Customer Z-A",
-                "Status A-Z"
+                "Emergency A-Z"
         );
 
         sortFilter.setValue("Newest First");
@@ -507,8 +468,7 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
         );
 
         refresh.setOnAction(
-                event ->
-                        loadRequests()
+                event -> loadRequests()
         );
 
         toolbar.getChildren().addAll(
@@ -522,9 +482,9 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
         return toolbar;
     }
 
-    // =========================================================
+    // =====================================================
     // BUTTON
-    // =========================================================
+    // =====================================================
 
     private Button createButton(
             String text,
@@ -533,9 +493,7 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
 
         Button button = new Button(text);
 
-        button.setTextFill(
-                Color.WHITE
-        );
+        button.setTextFill(Color.WHITE);
 
         button.setFont(
                 Font.font(
@@ -548,20 +506,12 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
         button.setPrefHeight(42);
 
         button.setPadding(
-                new Insets(
-                        0,
-                        18,
-                        0,
-                        18
-                )
+                new Insets(0, 18, 0, 18)
         );
 
         button.setCursor(Cursor.HAND);
 
-        setButtonStyle(
-                button,
-                color
-        );
+        setButtonStyle(button, color);
 
         button.setOnMouseEntered(
                 event ->
@@ -598,45 +548,35 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
         );
     }
 
-    // =========================================================
+    // =====================================================
     // RECORDS CARD
-    // =========================================================
+    // =====================================================
 
     private VBox createRecordsCard() {
 
         VBox card = new VBox(15);
 
-        card.setPadding(
-                new Insets(21)
-        );
+        card.setPadding(new Insets(21));
 
         card.setStyle(
-                "-fx-background-color: " +
-                SURFACE +
-                ";" +
-                "-fx-border-color: " +
-                BORDER +
-                ";" +
+                "-fx-background-color: " + SURFACE + ";" +
+                "-fx-border-color: " + BORDER + ";" +
                 "-fx-border-radius: 14;" +
                 "-fx-background-radius: 14;"
         );
 
         HBox header = new HBox();
 
-        header.setAlignment(
-                Pos.CENTER_LEFT
-        );
+        header.setAlignment(Pos.CENTER_LEFT);
 
         VBox headingBox = new VBox(4);
 
         Label heading =
                 new Label(
-                        "Service Request Information"
+                        "Emergency SOS Information"
                 );
 
-        heading.setTextFill(
-                Color.web(HEADING)
-        );
+        heading.setTextFill(Color.web(HEADING));
 
         heading.setFont(
                 Font.font(
@@ -648,28 +588,19 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
 
         Label subtitle =
                 new Label(
-                        "Roadside assistance requests and their current progress"
+                        "Emergency roadside assistance requests requiring immediate attention"
                 );
 
-        subtitle.setTextFill(
-                Color.web(TEXT)
-        );
+        subtitle.setTextFill(Color.web(TEXT));
 
         subtitle.setFont(
-                Font.font(
-                        "Arial",
-                        14
-                )
+                Font.font("Arial", 14)
         );
 
         resultCountLabel =
-                new Label(
-                        "0 requests"
-                );
+                new Label("0 requests");
 
-        resultCountLabel.setTextFill(
-                Color.web(BLUE)
-        );
+        resultCountLabel.setTextFill(Color.web(BLUE));
 
         resultCountLabel.setFont(
                 Font.font(
@@ -692,16 +623,12 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
                 Priority.ALWAYS
         );
 
-        Label live =
-                new Label(
-                        "● Live Data"
-                );
+        Label emergency =
+                new Label("● Emergency");
 
-        live.setTextFill(
-                Color.web(GREEN)
-        );
+        emergency.setTextFill(Color.web(RED));
 
-        live.setFont(
+        emergency.setFont(
                 Font.font(
                         "Arial",
                         FontWeight.BOLD,
@@ -709,18 +636,13 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
                 )
         );
 
-        live.setPadding(
-                new Insets(
-                        7,
-                        11,
-                        7,
-                        11
-                )
+        emergency.setPadding(
+                new Insets(7, 11, 7, 11)
         );
 
-        live.setStyle(
+        emergency.setStyle(
                 "-fx-background-color: " +
-                GREEN +
+                RED +
                 "18;" +
                 "-fx-background-radius: 20;"
         );
@@ -728,27 +650,19 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
         header.getChildren().addAll(
                 headingBox,
                 spacer,
-                live
+                emergency
         );
 
-        requestCards =
-                new VBox(12);
+        requestCards = new VBox(12);
 
         requestCards.setFillWidth(true);
 
         requestCards.setPadding(
-                new Insets(
-                        3,
-                        2,
-                        10,
-                        2
-                )
+                new Insets(3, 2, 10, 2)
         );
 
         ScrollPane scrollPane =
-                new ScrollPane(
-                        requestCards
-                );
+                new ScrollPane(requestCards);
 
         scrollPane.setFitToWidth(true);
         scrollPane.setPannable(true);
@@ -779,84 +693,58 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
         return card;
     }
 
-    // =========================================================
-    // REQUEST CARD
-    // =========================================================
+    // =====================================================
+    // SOS CARD
+    // =====================================================
 
-    private VBox createRequestCard(
-            ServiceRequest request,
+    private VBox createSOSCard(
+            SOSRequest request,
             int number
     ) {
 
-        VBox card =
-                new VBox(14);
+        VBox card = new VBox(14);
 
         card.setPadding(
-                new Insets(
-                        18,
-                        20,
-                        18,
-                        20
-                )
+                new Insets(18, 20, 18, 20)
         );
 
-        card.setCursor(
-                Cursor.HAND
-        );
+        card.setCursor(Cursor.HAND);
 
         String normalStyle =
-                "-fx-background-color: " +
-                SECONDARY +
-                ";" +
-                "-fx-border-color: " +
-                BORDER +
-                ";" +
+                "-fx-background-color: " + SECONDARY + ";" +
+                "-fx-border-color: " + BORDER + ";" +
                 "-fx-border-radius: 13;" +
                 "-fx-background-radius: 13;";
 
         String hoverStyle =
                 "-fx-background-color: #EAF8FA;" +
-                "-fx-border-color: " +
-                BLUE +
-                ";" +
+                "-fx-border-color: " + RED + ";" +
                 "-fx-border-radius: 13;" +
                 "-fx-background-radius: 13;" +
-                "-fx-effect: dropshadow(gaussian, rgba(37,99,235,0.18), 12, 0.15, 0, 3);";
+                "-fx-effect: dropshadow(gaussian, rgba(220,38,38,0.16), 12, 0.15, 0, 3);";
 
         card.setStyle(normalStyle);
 
-        // -----------------------------------------------------
+        // -------------------------------------------------
         // TOP
-        // -----------------------------------------------------
+        // -------------------------------------------------
 
-        HBox top =
-                new HBox(13);
+        HBox top = new HBox(13);
 
-        top.setAlignment(
-                Pos.CENTER_LEFT
-        );
+        top.setAlignment(Pos.CENTER_LEFT);
 
-        VBox iconBox =
-                createRequestIcon();
+        VBox iconBox = createSOSIcon();
 
-        VBox identity =
-                new VBox(4);
+        VBox identity = new VBox(4);
 
-        HBox idLine =
-                new HBox(9);
+        HBox idLine = new HBox(9);
 
-        idLine.setAlignment(
-                Pos.CENTER_LEFT
-        );
+        idLine.setAlignment(Pos.CENTER_LEFT);
 
         Label serial =
-                new Label(
-                        "#" + number
-                );
+                new Label("#" + number);
 
-        serial.setTextFill(
-                Color.web(BLUE)
-        );
+        serial.setTextFill(Color.web(RED));
 
         serial.setFont(
                 Font.font(
@@ -867,33 +755,24 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
         );
 
         serial.setPadding(
-                new Insets(
-                        4,
-                        8,
-                        4,
-                        8
-                )
+                new Insets(4, 8, 4, 8)
         );
 
         serial.setStyle(
                 "-fx-background-color: " +
-                BLUE +
+                RED +
                 "14;" +
                 "-fx-background-radius: 20;"
         );
 
-        Label requestId =
+        Label sosId =
                 new Label(
-                        safe(
-                                request.getRequestId()
-                        )
+                        safe(request.getSosId())
                 );
 
-        requestId.setTextFill(
-                Color.web(HEADING)
-        );
+        sosId.setTextFill(Color.web(HEADING));
 
-        requestId.setFont(
+        sosId.setFont(
                 Font.font(
                         "Arial",
                         FontWeight.BOLD,
@@ -903,20 +782,16 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
 
         idLine.getChildren().addAll(
                 serial,
-                requestId
+                sosId
         );
 
         Label customer =
                 new Label(
                         "Customer: " +
-                        safe(
-                                request.getCustomerName()
-                        )
+                        safe(request.getCustomerName())
                 );
 
-        customer.setTextFill(
-                Color.web(TEXT)
-        );
+        customer.setTextFill(Color.web(TEXT));
 
         customer.setFont(
                 Font.font(
@@ -930,8 +805,7 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
                 customer
         );
 
-        Region spacer =
-                new Region();
+        Region spacer = new Region();
 
         HBox.setHgrow(
                 spacer,
@@ -940,9 +814,7 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
 
         Label status =
                 createStatusBadge(
-                        safe(
-                                request.getStatus()
-                        )
+                        safe(request.getStatus())
                 );
 
         top.getChildren().addAll(
@@ -952,12 +824,11 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
                 status
         );
 
-        // -----------------------------------------------------
+        // -------------------------------------------------
         // INFORMATION
-        // -----------------------------------------------------
+        // -------------------------------------------------
 
-        HBox infoRow =
-                new HBox(12);
+        HBox infoRow = new HBox(12);
 
         VBox vehicle =
                 createInfoBox(
@@ -965,10 +836,10 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
                         request.getVehicleNumber()
                 );
 
-        VBox service =
+        VBox emergency =
                 createInfoBox(
-                        "SERVICE",
-                        request.getServiceType()
+                        "EMERGENCY",
+                        request.getEmergencyType()
                 );
 
         VBox mechanic =
@@ -985,69 +856,44 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
                         request.getLocation()
                 );
 
-        HBox.setHgrow(
-                vehicle,
-                Priority.ALWAYS
-        );
-
-        HBox.setHgrow(
-                service,
-                Priority.ALWAYS
-        );
-
-        HBox.setHgrow(
-                mechanic,
-                Priority.ALWAYS
-        );
-
-        HBox.setHgrow(
-                location,
-                Priority.ALWAYS
-        );
+        HBox.setHgrow(vehicle, Priority.ALWAYS);
+        HBox.setHgrow(emergency, Priority.ALWAYS);
+        HBox.setHgrow(mechanic, Priority.ALWAYS);
+        HBox.setHgrow(location, Priority.ALWAYS);
 
         infoRow.getChildren().addAll(
                 vehicle,
-                service,
+                emergency,
                 mechanic,
                 location
         );
 
-        // -----------------------------------------------------
+        // -------------------------------------------------
         // BOTTOM
-        // -----------------------------------------------------
+        // -------------------------------------------------
 
         HBox bottom =
                 new HBox(12);
 
-        bottom.setAlignment(
-                Pos.CENTER_LEFT
-        );
+        bottom.setAlignment(Pos.CENTER_LEFT);
 
         Label description =
                 new Label(
                         shorten(
-                                safe(
-                                        request.getDescription()
-                                ),
-                                80
+                                safe(request.getDescription()),
+                                90
                         )
                 );
 
-        description.setTextFill(
-                Color.web(TEXT)
-        );
+        description.setTextFill(Color.web(TEXT));
 
         description.setFont(
-                Font.font(
-                        "Arial",
-                        12
-                )
+                Font.font("Arial", 12)
         );
 
         description.setWrapText(true);
 
-        Region bottomSpacer =
-                new Region();
+        Region bottomSpacer = new Region();
 
         HBox.setHgrow(
                 bottomSpacer,
@@ -1056,19 +902,17 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
 
         Button view =
                 new Button(
-                        "View Details →"
+                        "View Emergency →"
                 );
 
         styleSmallButton(
                 view,
-                BLUE
+                RED
         );
 
         view.setOnAction(
                 event ->
-                        showDetails(
-                                request
-                        )
+                        showDetails(request)
         );
 
         bottom.getChildren().addAll(
@@ -1084,9 +928,9 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
                 bottom
         );
 
-        // -----------------------------------------------------
+        // -------------------------------------------------
         // HOVER
-        // -----------------------------------------------------
+        // -------------------------------------------------
 
         card.setOnMouseEntered(
                 event -> {
@@ -1102,9 +946,9 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
                 }
         );
 
-        // -----------------------------------------------------
+        // -------------------------------------------------
         // DOUBLE CLICK
-        // -----------------------------------------------------
+        // -------------------------------------------------
 
         card.setOnMouseClicked(
                 event -> {
@@ -1114,9 +958,7 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
                             event.getTarget() != view
                     ) {
 
-                        showDetails(
-                                request
-                        );
+                        showDetails(request);
                     }
                 }
         );
@@ -1124,84 +966,58 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
         return card;
     }
 
-    // =========================================================
-    // REQUEST ICON
-    // =========================================================
+    // =====================================================
+    // SOS ICON
+    // =====================================================
 
-    private VBox createRequestIcon() {
+    private VBox createSOSIcon() {
 
-        VBox box =
-                new VBox();
+        VBox box = new VBox();
 
-        box.setAlignment(
-                Pos.CENTER
-        );
+        box.setAlignment(Pos.CENTER);
 
-        box.setMinSize(
-                48,
-                48
-        );
-
-        box.setPrefSize(
-                48,
-                48
-        );
-
-        box.setMaxSize(
-                48,
-                48
-        );
+        box.setMinSize(48, 48);
+        box.setPrefSize(48, 48);
+        box.setMaxSize(48, 48);
 
         box.setStyle(
                 "-fx-background-color: " +
-                ORANGE +
+                RED +
                 ";" +
                 "-fx-background-radius: 12;"
         );
 
         Label icon =
-                new Label(
-                        "⚙"
-                );
+                new Label("SOS");
 
-        icon.setTextFill(
-                Color.WHITE
-        );
+        icon.setTextFill(Color.WHITE);
 
         icon.setFont(
                 Font.font(
                         "Arial",
                         FontWeight.BOLD,
-                        19
+                        13
                 )
         );
 
-        box.getChildren().add(
-                icon
-        );
+        box.getChildren().add(icon);
 
         return box;
     }
 
-    // =========================================================
+    // =====================================================
     // INFO BOX
-    // =========================================================
+    // =====================================================
 
     private VBox createInfoBox(
             String title,
             String value
     ) {
 
-        VBox box =
-                new VBox(5);
+        VBox box = new VBox(5);
 
         box.setPadding(
-                new Insets(
-                        10,
-                        12,
-                        10,
-                        12
-                )
+                new Insets(10, 12, 10, 12)
         );
 
         box.setStyle(
@@ -1218,9 +1034,7 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
         Label titleLabel =
                 new Label(title);
 
-        titleLabel.setTextFill(
-                Color.web(TEXT)
-        );
+        titleLabel.setTextFill(Color.web(TEXT));
 
         titleLabel.setFont(
                 Font.font(
@@ -1231,13 +1045,9 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
         );
 
         Label valueLabel =
-                new Label(
-                        safe(value)
-                );
+                new Label(safe(value));
 
-        valueLabel.setTextFill(
-                Color.web(HEADING)
-        );
+        valueLabel.setTextFill(Color.web(HEADING));
 
         valueLabel.setFont(
                 Font.font(
@@ -1257,9 +1067,9 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
         return box;
     }
 
-    // =========================================================
+    // =====================================================
     // STATUS BADGE
-    // =========================================================
+    // =====================================================
 
     private Label createStatusBadge(
             String status
@@ -1281,17 +1091,11 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
         );
 
         badge.setPadding(
-                new Insets(
-                        7,
-                        12,
-                        7,
-                        12
-                )
+                new Insets(7, 12, 7, 12)
         );
 
-        String color = getStatusColor(
-                status
-        );
+        String color =
+                getStatusColor(status);
 
         badge.setTextFill(
                 Color.web(color)
@@ -1312,50 +1116,37 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
     ) {
 
         if (
-                status.equalsIgnoreCase(
-                        "Completed"
-                )
+                status.equalsIgnoreCase("Resolved")
         ) {
-
             return GREEN;
         }
 
         if (
-                status.equalsIgnoreCase(
-                        "Accepted"
-                ) ||
-                status.equalsIgnoreCase(
-                        "In Progress"
-                )
+                status.equalsIgnoreCase("Accepted") ||
+                status.equalsIgnoreCase("In Progress")
         ) {
-
             return BLUE;
         }
 
         if (
-                status.equalsIgnoreCase(
-                        "Cancelled"
-                )
+                status.equalsIgnoreCase("Cancelled")
         ) {
-
             return RED;
         }
 
         return ORANGE;
     }
 
-    // =========================================================
+    // =====================================================
     // SMALL BUTTON
-    // =========================================================
+    // =====================================================
 
     private void styleSmallButton(
             Button button,
             String color
     ) {
 
-        button.setTextFill(
-                Color.WHITE
-        );
+        button.setTextFill(Color.WHITE);
 
         button.setFont(
                 Font.font(
@@ -1366,17 +1157,10 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
         );
 
         button.setPadding(
-                new Insets(
-                        8,
-                        13,
-                        8,
-                        13
-                )
+                new Insets(8, 13, 8, 13)
         );
 
-        button.setCursor(
-                Cursor.HAND
-        );
+        button.setCursor(Cursor.HAND);
 
         button.setStyle(
                 "-fx-background-color: " +
@@ -1388,7 +1172,11 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
         button.setOnMouseEntered(
                 event ->
                         button.setStyle(
-                                "-fx-background-color: #1D4ED8;" +
+                                "-fx-background-color: " +
+                                (color.equals(RED)
+                                        ? "#B91C1C"
+                                        : "#1D4ED8") +
+                                ";" +
                                 "-fx-background-radius: 8;"
                         )
         );
@@ -1404,9 +1192,9 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
         );
     }
 
-    // =========================================================
-    // SEARCH / FILTER / SORT
-    // =========================================================
+    // =====================================================
+    // FILTER / SORT
+    // =====================================================
 
     private void applyFilters() {
 
@@ -1432,11 +1220,11 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
                         ? "Newest First"
                         : sortFilter.getValue();
 
-        List<ServiceRequest> filtered =
+        List<SOSRequest> filtered =
                 new ArrayList<>();
 
         for (
-                ServiceRequest request :
+                SOSRequest request :
                 allRequests
         ) {
 
@@ -1446,25 +1234,19 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
                             search
                     )
             ) {
-
                 continue;
             }
 
             if (
                     !"All".equals(status) &&
                     !status.equalsIgnoreCase(
-                            safe(
-                                    request.getStatus()
-                            )
+                            safe(request.getStatus())
                     )
             ) {
-
                 continue;
             }
 
-            filtered.add(
-                    request
-            );
+            filtered.add(request);
         }
 
         sortRequests(
@@ -1472,17 +1254,13 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
                 sort
         );
 
-        requestList.setAll(
-                filtered
-        );
+        sosList.setAll(filtered);
 
-        renderRequests(
-                filtered
-        );
+        renderRequests(filtered);
     }
 
     private boolean matchesSearch(
-            ServiceRequest request,
+            SOSRequest request,
             String search
     ) {
 
@@ -1491,7 +1269,7 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
         }
 
         return safe(
-                request.getRequestId()
+                request.getSosId()
         ).toLowerCase().contains(search)
 
                 ||
@@ -1509,13 +1287,7 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
                 ||
 
                 safe(
-                        request.getMechanicName()
-                ).toLowerCase().contains(search)
-
-                ||
-
-                safe(
-                        request.getServiceType()
+                        request.getEmergencyType()
                 ).toLowerCase().contains(search)
 
                 ||
@@ -1527,12 +1299,18 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
                 ||
 
                 safe(
+                        request.getMechanicName()
+                ).toLowerCase().contains(search)
+
+                ||
+
+                safe(
                         request.getDescription()
                 ).toLowerCase().contains(search);
     }
 
     private void sortRequests(
-            List<ServiceRequest> requests,
+            List<SOSRequest> requests,
             String sort
     ) {
 
@@ -1555,7 +1333,7 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
 
             requests.sort(
                     Comparator.comparing(
-                            (ServiceRequest request) ->
+                            (SOSRequest request) ->
                                     safe(
                                             request.getCustomerName()
                                     ).toLowerCase()
@@ -1563,14 +1341,14 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
             );
 
         } else if (
-                "Status A-Z".equals(sort)
+                "Emergency A-Z".equals(sort)
         ) {
 
             requests.sort(
                     Comparator.comparing(
                             request ->
                                     safe(
-                                            request.getStatus()
+                                            request.getEmergencyType()
                                     ).toLowerCase()
                     )
             );
@@ -1583,7 +1361,7 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
                     Comparator.comparing(
                             request ->
                                     safe(
-                                            request.getRequestId()
+                                            request.getSosId()
                                     )
                     )
             );
@@ -1592,35 +1370,31 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
 
             requests.sort(
                     Comparator.comparing(
-                            (ServiceRequest request) ->
+                            (SOSRequest request) ->
                                     safe(
-                                            request.getRequestId()
+                                            request.getSosId()
                                     )
                     ).reversed()
             );
         }
     }
 
-    // =========================================================
+    // =====================================================
     // LOAD
-    // =========================================================
+    // =====================================================
 
     private void loadRequests() {
 
         try {
 
-            List<ServiceRequest> requests =
+            List<SOSRequest> requests =
                     controller.getAllRequests();
 
             allRequests.clear();
 
-            allRequests.addAll(
-                    requests
-            );
+            allRequests.addAll(requests);
 
-            updateStatistics(
-                    allRequests
-            );
+            updateStatistics(allRequests);
 
             applyFilters();
 
@@ -1629,18 +1403,18 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
             e.printStackTrace();
 
             showError(
-                    "Unable to Load Requests",
+                    "Unable to Load SOS Requests",
                     e.getMessage()
             );
         }
     }
 
-    // =========================================================
+    // =====================================================
     // RENDER
-    // =========================================================
+    // =====================================================
 
     private void renderRequests(
-            List<ServiceRequest> requests
+            List<SOSRequest> requests
     ) {
 
         requestCards.getChildren().clear();
@@ -1661,12 +1435,12 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
         int number = 1;
 
         for (
-                ServiceRequest request :
+                SOSRequest request :
                 requests
         ) {
 
             requestCards.getChildren().add(
-                    createRequestCard(
+                    createSOSCard(
                             request,
                             number++
                     )
@@ -1681,60 +1455,50 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
         );
     }
 
-    // =========================================================
+    // =====================================================
     // STATISTICS
-    // =========================================================
+    // =====================================================
 
     private void updateStatistics(
-            List<ServiceRequest> requests
+            List<SOSRequest> requests
     ) {
 
         int pending = 0;
         int accepted = 0;
         int progress = 0;
-        int completed = 0;
+        int resolved = 0;
 
         for (
-                ServiceRequest request :
+                SOSRequest request :
                 requests
         ) {
 
             String status =
-                    safe(
-                            request.getStatus()
-                    );
+                    safe(request.getStatus());
 
             if (
-                    status.equalsIgnoreCase(
-                            "Pending"
-                    )
+                    status.equalsIgnoreCase("Pending")
             ) {
 
                 pending++;
 
             } else if (
-                    status.equalsIgnoreCase(
-                            "Accepted"
-                    )
+                    status.equalsIgnoreCase("Accepted")
             ) {
 
                 accepted++;
 
             } else if (
-                    status.equalsIgnoreCase(
-                            "In Progress"
-                    )
+                    status.equalsIgnoreCase("In Progress")
             ) {
 
                 progress++;
 
             } else if (
-                    status.equalsIgnoreCase(
-                            "Completed"
-                    )
+                    status.equalsIgnoreCase("Resolved")
             ) {
 
-                completed++;
+                resolved++;
             }
         }
 
@@ -1745,49 +1509,39 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
         );
 
         pendingLabel.setText(
-                String.valueOf(
-                        pending
-                )
+                String.valueOf(pending)
         );
 
         acceptedLabel.setText(
-                String.valueOf(
-                        accepted
-                )
+                String.valueOf(accepted)
         );
 
         progressLabel.setText(
-                String.valueOf(
-                        progress
-                )
+                String.valueOf(progress)
         );
 
-        completedLabel.setText(
-                String.valueOf(
-                        completed
-                )
+        resolvedLabel.setText(
+                String.valueOf(resolved)
         );
     }
 
-    // =========================================================
+    // =====================================================
     // DETAILS
-    // =========================================================
+    // =====================================================
 
     private void showDetails(
-            ServiceRequest request
+            SOSRequest request
     ) {
 
         Dialog<Void> dialog =
                 new Dialog<>();
 
         dialog.setTitle(
-                "Service Request Details"
+                "SOS Emergency Details"
         );
 
         dialog.setHeaderText(
-                safe(
-                        request.getRequestId()
-                )
+                safe(request.getSosId())
         );
 
         ButtonType assign =
@@ -1809,25 +1563,20 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
                         close
                 );
 
-        VBox content =
-                new VBox(13);
+        VBox content = new VBox(13);
 
         content.setPadding(
                 new Insets(20)
         );
 
-        content.setPrefWidth(
-                480
-        );
+        content.setPrefWidth(500);
 
         Label title =
                 new Label(
-                        "Request Information"
+                        "Emergency Information"
                 );
 
-        title.setTextFill(
-                Color.web(HEADING)
-        );
+        title.setTextFill(Color.web(HEADING));
 
         title.setFont(
                 Font.font(
@@ -1839,9 +1588,7 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
 
         Label status =
                 createStatusBadge(
-                        safe(
-                                request.getStatus()
-                        )
+                        safe(request.getStatus())
                 );
 
         HBox titleRow =
@@ -1851,8 +1598,7 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
                 Pos.CENTER_LEFT
         );
 
-        Region spacer =
-                new Region();
+        Region spacer = new Region();
 
         HBox.setHgrow(
                 spacer,
@@ -1877,16 +1623,24 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
                         request.getVehicleNumber()
                 ),
                 detail(
-                        "Service",
-                        request.getServiceType()
+                        "Emergency",
+                        request.getEmergencyType()
+                ),
+                detail(
+                        "Description",
+                        request.getDescription()
                 ),
                 detail(
                         "Location",
                         request.getLocation()
                 ),
                 detail(
-                        "Description",
-                        request.getDescription()
+                        "Latitude",
+                        request.getLatitude()
+                ),
+                detail(
+                        "Longitude",
+                        request.getLongitude()
                 ),
                 detail(
                         "Mechanic",
@@ -1897,22 +1651,16 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
         );
 
         dialog.getDialogPane()
-                .setContent(
-                        content
-                );
+                .setContent(content);
 
         styleDialog(dialog);
 
         dialog.setResultConverter(
                 button -> {
 
-                    if (
-                            button == assign
-                    ) {
+                    if (button == assign) {
 
-                        assignMechanic(
-                                request
-                        );
+                        assignMechanic(request);
                     }
 
                     return null;
@@ -1922,34 +1670,27 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
         dialog.showAndWait();
     }
 
-    // =========================================================
+    // =====================================================
     // DETAIL ROW
-    // =========================================================
+    // =====================================================
 
     private HBox detail(
             String title,
             String value
     ) {
 
-        HBox row =
-                new HBox(12);
+        HBox row = new HBox(12);
 
         row.setAlignment(
                 Pos.TOP_LEFT
         );
 
         Label label =
-                new Label(
-                        title
-                );
+                new Label(title);
 
-        label.setMinWidth(
-                110
-        );
+        label.setMinWidth(110);
 
-        label.setTextFill(
-                Color.web(TEXT)
-        );
+        label.setTextFill(Color.web(TEXT));
 
         label.setFont(
                 Font.font(
@@ -1960,19 +1701,12 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
         );
 
         Label valueLabel =
-                new Label(
-                        safe(value)
-                );
+                new Label(safe(value));
 
-        valueLabel.setTextFill(
-                Color.web(HEADING)
-        );
+        valueLabel.setTextFill(Color.web(HEADING));
 
         valueLabel.setFont(
-                Font.font(
-                        "Arial",
-                        14
-                )
+                Font.font("Arial", 14)
         );
 
         valueLabel.setWrapText(true);
@@ -1990,12 +1724,12 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
         return row;
     }
 
-    // =========================================================
+    // =====================================================
     // ASSIGN MECHANIC
-    // =========================================================
+    // =====================================================
 
     private void assignMechanic(
-            ServiceRequest request
+            SOSRequest request
     ) {
 
         try {
@@ -2025,10 +1759,7 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
             );
 
             dialog.setHeaderText(
-                    "Select mechanic for " +
-                    safe(
-                            request.getRequestId()
-                    )
+                    "Select mechanic for emergency request"
             );
 
             ButtonType assignButton =
@@ -2051,9 +1782,7 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
                     mechanics
             );
 
-            mechanicBox.setPrefWidth(
-                    330
-            );
+            mechanicBox.setPrefWidth(330);
 
             mechanicBox.setCellFactory(
                     list ->
@@ -2080,12 +1809,8 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
                                     } else {
 
                                         setText(
-                                                safe(
-                                                        item.getName()
-                                                )
-                                                +
-                                                " • "
-                                                +
+                                                safe(item.getName()) +
+                                                " • " +
                                                 safe(
                                                         item.getSpecialization()
                                                 )
@@ -2119,19 +1844,16 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
                             } else {
 
                                 setText(
-                                        safe(
-                                                item.getName()
-                                        )
+                                        safe(item.getName())
                                 );
                             }
                         }
                     }
             );
 
-            VBox content =
-                    new VBox(12);
+            VBox box = new VBox(12);
 
-            content.setPadding(
+            box.setPadding(
                     new Insets(20)
             );
 
@@ -2140,9 +1862,7 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
                             "Available Mechanics"
                     );
 
-            label.setTextFill(
-                    Color.web(HEADING)
-            );
+            label.setTextFill(Color.web(HEADING));
 
             label.setFont(
                     Font.font(
@@ -2152,15 +1872,13 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
                     )
             );
 
-            content.getChildren().addAll(
+            box.getChildren().addAll(
                     label,
                     mechanicBox
             );
 
             dialog.getDialogPane()
-                    .setContent(
-                            content
-                    );
+                    .setContent(box);
 
             styleDialog(dialog);
 
@@ -2185,12 +1903,11 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
                                 try {
 
                                     boolean success =
-                                            controller
-                                                    .assignMechanic(
-                                                            request.getRequestId(),
-                                                            mechanic.getMechanicId(),
-                                                            mechanic.getName()
-                                                    );
+                                            controller.assignMechanic(
+                                                    request.getSosId(),
+                                                    mechanic.getMechanicId(),
+                                                    mechanic.getName()
+                                            );
 
                                     if (success) {
 
@@ -2230,135 +1947,12 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
         }
     }
 
-    // =========================================================
-    // STATUS UPDATE
-    // =========================================================
-
-    private void updateRequestStatus(
-            ServiceRequest request,
-            String newStatus
-    ) {
-
-        try {
-
-            boolean success =
-                    controller.updateStatus(
-                            request.getRequestId(),
-                            newStatus
-                    );
-
-            if (success) {
-
-                request.setStatus(
-                        newStatus
-                );
-
-                loadRequests();
-
-                showInfo(
-                        "Status Updated",
-                        "Request status changed to " +
-                        newStatus +
-                        "."
-                );
-
-            } else {
-
-                showError(
-                        "Update Failed",
-                        "Unable to update request status."
-                );
-            }
-
-        } catch (Exception e) {
-
-            showError(
-                    "Update Failed",
-                    e.getMessage()
-            );
-        }
-    }
-
-    // =========================================================
-    // EMPTY STATE
-    // =========================================================
-
-    private VBox createEmptyState() {
-
-        VBox box =
-                new VBox(9);
-
-        box.setAlignment(
-                Pos.CENTER
-        );
-
-        box.setPadding(
-                new Insets(45)
-        );
-
-        Label icon =
-                new Label("⚙");
-
-        icon.setTextFill(
-                Color.web(BLUE)
-        );
-
-        icon.setFont(
-                Font.font(
-                        "Arial",
-                        FontWeight.BOLD,
-                        34
-                )
-        );
-
-        Label title =
-                new Label(
-                        "No service requests found"
-                );
-
-        title.setTextFill(
-                Color.web(HEADING)
-        );
-
-        title.setFont(
-                Font.font(
-                        "Arial",
-                        FontWeight.BOLD,
-                        18
-                )
-        );
-
-        Label subtitle =
-                new Label(
-                        "Customer roadside assistance requests will appear here."
-                );
-
-        subtitle.setTextFill(
-                Color.web(TEXT)
-        );
-
-        subtitle.setFont(
-                Font.font(
-                        "Arial",
-                        14
-                )
-        );
-
-        box.getChildren().addAll(
-                icon,
-                title,
-                subtitle
-        );
-
-        return box;
-    }
-
-    // =========================================================
+    // =====================================================
     // DELETE
-    // =========================================================
+    // =====================================================
 
     private void deleteRequest(
-            ServiceRequest request
+            SOSRequest request
     ) {
 
         Alert confirm =
@@ -2367,18 +1961,16 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
                 );
 
         confirm.setTitle(
-                "Delete Service Request"
+                "Delete SOS Request"
         );
 
         confirm.setHeaderText(
-                "Delete this service request?"
+                "Delete this emergency request?"
         );
 
         confirm.setContentText(
-                "Request ID: " +
-                safe(
-                        request.getRequestId()
-                ) +
+                "SOS ID: " +
+                safe(request.getSosId()) +
                 "\n\nThis action cannot be undone."
         );
 
@@ -2402,10 +1994,7 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
         confirm.showAndWait().ifPresent(
                 result -> {
 
-                    if (
-                            result != deleteButton
-                    ) {
-
+                    if (result != deleteButton) {
                         return;
                     }
 
@@ -2413,7 +2002,7 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
 
                         boolean success =
                                 controller.deleteRequest(
-                                        request.getRequestId()
+                                        request.getSosId()
                                 );
 
                         if (success) {
@@ -2422,14 +2011,14 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
 
                             showInfo(
                                     "Deleted",
-                                    "Service request deleted successfully."
+                                    "SOS request deleted successfully."
                             );
 
                         } else {
 
                             showError(
                                     "Delete Failed",
-                                    "Unable to delete service request."
+                                    "Unable to delete SOS request."
                             );
                         }
 
@@ -2444,9 +2033,71 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
         );
     }
 
-    // =========================================================
-    // TEXT / COMBO STYLING
-    // =========================================================
+    // =====================================================
+    // EMPTY STATE
+    // =====================================================
+
+    private VBox createEmptyState() {
+
+        VBox box = new VBox(9);
+
+        box.setAlignment(Pos.CENTER);
+
+        box.setPadding(
+                new Insets(45)
+        );
+
+        Label icon =
+                new Label("SOS");
+
+        icon.setTextFill(Color.web(RED));
+
+        icon.setFont(
+                Font.font(
+                        "Arial",
+                        FontWeight.BOLD,
+                        30
+                )
+        );
+
+        Label title =
+                new Label(
+                        "No SOS requests found"
+                );
+
+        title.setTextFill(Color.web(HEADING));
+
+        title.setFont(
+                Font.font(
+                        "Arial",
+                        FontWeight.BOLD,
+                        18
+                )
+        );
+
+        Label subtitle =
+                new Label(
+                        "Emergency roadside assistance requests will appear here."
+                );
+
+        subtitle.setTextFill(Color.web(TEXT));
+
+        subtitle.setFont(
+                Font.font("Arial", 14)
+        );
+
+        box.getChildren().addAll(
+                icon,
+                title,
+                subtitle
+        );
+
+        return box;
+    }
+
+    // =====================================================
+    // STYLING
+    // =====================================================
 
     private void styleTextField(
             TextField field
@@ -2500,18 +2151,16 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
         );
     }
 
-    // =========================================================
+    // =====================================================
     // HELPERS
-    // =========================================================
+    // =====================================================
 
     private boolean isAssigned(
-            ServiceRequest request
+            SOSRequest request
     ) {
 
         String mechanic =
-                safe(
-                        request.getMechanicName()
-                );
+                safe(request.getMechanicName());
 
         return !mechanic.equals("-");
     }
@@ -2526,13 +2175,10 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
                 value.isBlank()
         ) {
 
-            return "No description provided.";
+            return "No emergency description provided.";
         }
 
-        if (
-                value.length() <= max
-        ) {
-
+        if (value.length() <= max) {
             return value;
         }
 
@@ -2557,9 +2203,71 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
         return value;
     }
 
-    // =========================================================
+    // =====================================================
+    // ERROR VIEW
+    // =====================================================
+
+    private VBox createErrorView(
+            String message
+    ) {
+
+        VBox box = new VBox(12);
+
+        box.setAlignment(Pos.CENTER);
+
+        box.setPadding(
+                new Insets(30)
+        );
+
+        Label icon =
+                new Label("!");
+
+        icon.setTextFill(Color.web(RED));
+
+        icon.setFont(
+                Font.font(
+                        "Arial",
+                        FontWeight.BOLD,
+                        32
+                )
+        );
+
+        Label title =
+                new Label(
+                        "SOS Management Error"
+                );
+
+        title.setTextFill(Color.web(HEADING));
+
+        title.setFont(
+                Font.font(
+                        "Arial",
+                        FontWeight.BOLD,
+                        20
+                )
+        );
+
+        Label text =
+                new Label(message);
+
+        text.setTextFill(Color.web(TEXT));
+
+        text.setFont(
+                Font.font("Arial", 15)
+        );
+
+        box.getChildren().addAll(
+                icon,
+                title,
+                text
+        );
+
+        return box;
+    }
+
+    // =====================================================
     // ALERTS
-    // =========================================================
+    // =====================================================
 
     private void showInfo(
             String title,
@@ -2597,79 +2305,5 @@ public class ServiceRequestManagementPage extends AdminSectionPage {
         );
 
         alert.showAndWait();
-    }
-
-    // =========================================================
-    // ERROR VIEW
-    // =========================================================
-
-    private VBox createErrorView(
-            String message
-    ) {
-
-        VBox box =
-                new VBox(12);
-
-        box.setAlignment(
-                Pos.CENTER
-        );
-
-        box.setPadding(
-                new Insets(30)
-        );
-
-        Label icon =
-                new Label("!");
-
-        icon.setTextFill(
-                Color.web(RED)
-        );
-
-        icon.setFont(
-                Font.font(
-                        "Arial",
-                        FontWeight.BOLD,
-                        32
-                )
-        );
-
-        Label title =
-                new Label(
-                        "Service Request Error"
-                );
-
-        title.setTextFill(
-                Color.web(HEADING)
-        );
-
-        title.setFont(
-                Font.font(
-                        "Arial",
-                        FontWeight.BOLD,
-                        20
-                )
-        );
-
-        Label text =
-                new Label(message);
-
-        text.setTextFill(
-                Color.web(TEXT)
-        );
-
-        text.setFont(
-                Font.font(
-                        "Arial",
-                        15
-                )
-        );
-
-        box.getChildren().addAll(
-                icon,
-                title,
-                text
-        );
-
-        return box;
     }
 }

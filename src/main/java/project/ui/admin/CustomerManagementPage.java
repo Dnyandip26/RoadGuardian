@@ -5,9 +5,12 @@ import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
-import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import javafx.scene.Cursor;
+import javafx.scene.shape.Circle;
+
+import java.util.ArrayList;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import project.controller.admin.CustomerController;
@@ -42,10 +45,14 @@ public class CustomerManagementPage extends AdminSectionPage {
     // DATA
     // =========================================================
 
-    private TableView<Customer> customerTable;
-
     private final ObservableList<Customer> customerList =
             FXCollections.observableArrayList();
+
+    private VBox customerCards;
+    private TextField searchField;
+    private ComboBox<String> statusFilter;
+    private ComboBox<String> sortFilter;
+    private Label resultCountLabel;
 
     private CustomerController controller;
 
@@ -97,8 +104,8 @@ public class CustomerManagementPage extends AdminSectionPage {
         // TOOLBAR
         HBox toolbar = createToolbar();
 
-        // TABLE
-        VBox tableCard = createTableCard();
+        // CUSTOMER CARDS
+        VBox tableCard = createCustomerRecordsCard();
 
         root.getChildren().addAll(
                 header,
@@ -381,150 +388,60 @@ public class CustomerManagementPage extends AdminSectionPage {
 
     private HBox createToolbar() {
 
-        HBox toolbar =
-                new HBox(12);
+        HBox toolbar = new HBox(12);
+        toolbar.setAlignment(Pos.CENTER_LEFT);
 
-        toolbar.setAlignment(
-                Pos.CENTER_LEFT
-        );
-
-        // SEARCH
-        TextField searchField =
-                new TextField();
-
+        searchField = new TextField();
         searchField.setPromptText(
                 "Search customers by name, email, phone or city..."
         );
-
-        searchField.setPrefWidth(390);
-
+        searchField.setPrefWidth(380);
         searchField.setPrefHeight(44);
+        styleTextField(searchField);
 
-        searchField.setStyle(
-                "-fx-background-color: " + SURFACE + ";" +
-                "-fx-text-fill: " + HEADING + ";" +
-                "-fx-prompt-text-fill: " + TEXT + ";" +
-                "-fx-border-color: " + BORDER + ";" +
-                "-fx-border-radius: 9;" +
-                "-fx-background-radius: 9;" +
-                "-fx-padding: 0 14 0 14;" +
-                "-fx-font-size: 16px;"
-        );
-
-        // FILTER
-        ComboBox<String> statusFilter =
-                new ComboBox<>();
-
-        statusFilter.getItems().addAll(
-                "All",
-                "Active",
-                "Inactive"
-        );
-
+        statusFilter = new ComboBox<>();
+        statusFilter.getItems().addAll("All", "Active", "Inactive");
         statusFilter.setValue("All");
-
-        statusFilter.setPrefWidth(130);
-
+        statusFilter.setPrefWidth(125);
         statusFilter.setPrefHeight(44);
+        styleComboBox(statusFilter);
 
-        statusFilter.setStyle(
-                "-fx-background-color: " + SURFACE + ";" +
-                "-fx-border-color: " + BORDER + ";" +
-                "-fx-border-radius: 9;" +
-                "-fx-background-radius: 9;" +
-                "-fx-font-size: 16px;"
+        sortFilter = new ComboBox<>();
+        sortFilter.getItems().addAll(
+                "Newest First", "Oldest First", "Name A-Z", "Name Z-A"
         );
+        sortFilter.setValue("Newest First");
+        sortFilter.setPrefWidth(145);
+        sortFilter.setPrefHeight(44);
+        styleComboBox(sortFilter);
 
-        // REFRESH
-        Button refreshButton =
-                createActionButton(
-                        "Refresh",
-                        BLUE
-                );
-
+        Button refreshButton = createActionButton("Refresh", BLUE);
         refreshButton.setPrefHeight(44);
 
-        // SPACER
-        Region spacer =
-                new Region();
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        HBox.setHgrow(
-                spacer,
-                Priority.ALWAYS
-        );
-
-        // ADD
-        Button addButton =
-                createActionButton(
-                        "+ Add Customer",
-                        ORANGE
-                );
-
+        Button addButton = createActionButton("+ Add Customer", ORANGE);
         addButton.setPrefHeight(44);
+        addButton.setPadding(new Insets(0, 20, 0, 20));
 
-        addButton.setPadding(
-                new Insets(
-                        0,
-                        20,
-                        0,
-                        20
-                )
-        );
-
-        // SEARCH
         searchField.textProperty().addListener(
-                (observable, oldValue, newValue) -> {
-
-                    if (
-                            newValue == null ||
-                            newValue.isBlank()
-                    ) {
-
-                        loadCustomers();
-
-                    } else {
-
-                        searchCustomers(
-                                newValue.trim()
-                        );
-                    }
-                }
+                (observable, oldValue, newValue) -> applyFilters()
         );
 
-        // FILTER
         statusFilter.valueProperty().addListener(
-                (observable, oldValue, newValue) -> {
-
-                    if (
-                            newValue == null ||
-                            newValue.equals("All")
-                    ) {
-
-                        loadCustomers();
-
-                    } else {
-
-                        filterByStatus(
-                                newValue
-                        );
-                    }
-                }
+                (observable, oldValue, newValue) -> applyFilters()
         );
 
-        refreshButton.setOnAction(
-                event -> loadCustomers()
+        sortFilter.valueProperty().addListener(
+                (observable, oldValue, newValue) -> applyFilters()
         );
 
-        addButton.setOnAction(
-                event -> showAddCustomerDialog()
-        );
+        refreshButton.setOnAction(event -> loadCustomers());
+        addButton.setOnAction(event -> showAddCustomerDialog());
 
         toolbar.getChildren().addAll(
-                searchField,
-                statusFilter,
-                refreshButton,
-                spacer,
-                addButton
+                searchField, statusFilter, sortFilter, refreshButton, spacer, addButton
         );
 
         return toolbar;
@@ -616,18 +533,14 @@ public class CustomerManagementPage extends AdminSectionPage {
     }
 
     // =========================================================
-    // TABLE CARD
+    // CUSTOMER RECORDS CARD
     // =========================================================
 
-    private VBox createTableCard() {
+    private VBox createCustomerRecordsCard() {
 
-        VBox card =
-                new VBox(15);
-
-        card.setPadding(
-                new Insets(21)
-        );
-
+        VBox card = new VBox(15);
+        card.setPadding(new Insets(21));
+        card.setMinHeight(430);
         card.setStyle(
                 "-fx-background-color: " + SURFACE + ";" +
                 "-fx-border-color: " + BORDER + ";" +
@@ -635,707 +548,418 @@ public class CustomerManagementPage extends AdminSectionPage {
                 "-fx-background-radius: 14;"
         );
 
-        // HEADER
-        HBox header =
-                new HBox();
+        HBox header = new HBox();
+        header.setAlignment(Pos.CENTER_LEFT);
 
-        header.setAlignment(
-                Pos.CENTER_LEFT
+        VBox headingBox = new VBox(4);
+        Label heading = new Label("Customer Information");
+        heading.setTextFill(Color.web(HEADING));
+        heading.setFont(Font.font("Arial", FontWeight.BOLD, 20));
+
+        Label helper = new Label(
+                "Registered customers and their account information"
         );
+        helper.setTextFill(Color.web(TEXT));
+        helper.setFont(Font.font("Arial", 14));
 
-        VBox headingBox =
-                new VBox(4);
+        resultCountLabel = new Label("0 customers");
+        resultCountLabel.setTextFill(Color.web(BLUE));
+        resultCountLabel.setFont(Font.font("Arial", FontWeight.BOLD, 14));
 
-        Label heading =
-                new Label(
-                        "Customer Records"
-                );
+        headingBox.getChildren().addAll(heading, helper, resultCountLabel);
 
-        heading.setTextFill(
-                Color.web(HEADING)
-        );
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        heading.setFont(
-                Font.font(
-                        "Arial",
-                        FontWeight.BOLD,
-                        20
-                )
-        );
-
-        Label helper =
-                new Label(
-                        "Registered customers and their current account status"
-                );
-
-        helper.setTextFill(
-                Color.web(TEXT)
-        );
-
-        helper.setFont(
-                Font.font(
-                        "Arial",
-                        14
-                )
-        );
-
-        headingBox.getChildren().addAll(
-                heading,
-                helper
-        );
-
-        Region spacer =
-                new Region();
-
-        HBox.setHgrow(
-                spacer,
-                Priority.ALWAYS
-        );
-
-        Label live =
-                new Label(
-                        "● Live Data"
-                );
-
-        live.setTextFill(
-                Color.web(GREEN)
-        );
-
-        live.setFont(
-                Font.font(
-                        "Arial",
-                        FontWeight.BOLD,
-                        14
-                )
-        );
-
-        live.setPadding(
-                new Insets(
-                        7,
-                        11,
-                        7,
-                        11
-                )
-        );
-
+        Label live = new Label("● Live Data");
+        live.setTextFill(Color.web(GREEN));
+        live.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+        live.setPadding(new Insets(7, 11, 7, 11));
         live.setStyle(
-                "-fx-background-color: " +
-                GREEN +
-                "18;" +
+                "-fx-background-color: " + GREEN + "18;" +
                 "-fx-background-radius: 20;"
         );
 
-        header.getChildren().addAll(
-                headingBox,
-                spacer,
-                live
+        header.getChildren().addAll(headingBox, spacer, live);
+
+        customerCards = new VBox(12);
+        customerCards.setFillWidth(true);
+        customerCards.setPadding(new Insets(3, 2, 10, 2));
+
+        ScrollPane scrollPane = new ScrollPane(customerCards);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        scrollPane.setPannable(true);
+        scrollPane.setStyle(
+                "-fx-background-color: transparent;" +
+                "-fx-background: transparent;"
         );
 
-        // TABLE
-        customerTable =
-                new TableView<>();
-
-        customerTable.setItems(
-                customerList
-        );
-
-        customerTable.setColumnResizePolicy(
-                TableView.CONSTRAINED_RESIZE_POLICY
-        );
-
-        customerTable.setFixedCellSize(
-                55
-        );
-
-        customerTable.setPrefHeight(
-                420
-        );
-
-        customerTable.setStyle(
-                "-fx-background-color: " + SURFACE + ";" +
-                "-fx-control-inner-background: " + SURFACE + ";" +
-                "-fx-table-cell-border-color: " + BORDER + ";" +
-                "-fx-border-color: " + BORDER + ";" +
-                "-fx-border-radius: 10;" +
-                "-fx-background-radius: 10;"
-        );
-
-        // =====================================================
-        // COLUMNS
-        // =====================================================
-
-        TableColumn<Customer, String> idColumn =
-                new TableColumn<>(
-                        "CUSTOMER ID"
-                );
-
-        TableColumn<Customer, String> nameColumn =
-                new TableColumn<>(
-                        "CUSTOMER"
-                );
-
-        TableColumn<Customer, String> emailColumn =
-                new TableColumn<>(
-                        "EMAIL"
-                );
-
-        TableColumn<Customer, String> phoneColumn =
-                new TableColumn<>(
-                        "PHONE"
-                );
-
-        TableColumn<Customer, String> cityColumn =
-                new TableColumn<>(
-                        "CITY"
-                );
-
-        TableColumn<Customer, String> statusColumn =
-                new TableColumn<>(
-                        "STATUS"
-                );
-
-        idColumn.setCellValueFactory(
-                new PropertyValueFactory<>(
-                        "customerId"
-                )
-        );
-
-        nameColumn.setCellValueFactory(
-                new PropertyValueFactory<>(
-                        "name"
-                )
-        );
-
-        emailColumn.setCellValueFactory(
-                new PropertyValueFactory<>(
-                        "email"
-                )
-        );
-
-        phoneColumn.setCellValueFactory(
-                new PropertyValueFactory<>(
-                        "phone"
-                )
-        );
-
-        cityColumn.setCellValueFactory(
-                new PropertyValueFactory<>(
-                        "city"
-                )
-        );
-
-        statusColumn.setCellValueFactory(
-                new PropertyValueFactory<>(
-                        "status"
-                )
-        );
-
-        // WIDTHS
-        idColumn.setMinWidth(160);
-        idColumn.setPrefWidth(180);
-
-        nameColumn.setMinWidth(150);
-        nameColumn.setPrefWidth(170);
-
-        emailColumn.setMinWidth(200);
-        emailColumn.setPrefWidth(220);
-
-        phoneColumn.setMinWidth(140);
-        phoneColumn.setPrefWidth(150);
-
-        cityColumn.setMinWidth(110);
-        cityColumn.setPrefWidth(125);
-
-        statusColumn.setMinWidth(120);
-        statusColumn.setPrefWidth(130);
-
-        // =====================================================
-        // ID
-        // =====================================================
-
-        idColumn.setCellFactory(
-                column ->
-                        new TableCell<Customer, String>() {
-
-                            @Override
-                            protected void updateItem(
-                                    String item,
-                                    boolean empty
-                            ) {
-
-                                super.updateItem(
-                                        item,
-                                        empty
-                                );
-
-                                if (
-                                        empty ||
-                                        item == null
-                                ) {
-
-                                    setText(null);
-
-                                } else {
-
-                                    setText(item);
-
-                                    setTextFill(
-                                            Color.web(TEXT)
-                                    );
-
-                                    setFont(
-                                            Font.font(
-                                                    "Arial",
-                                                    14
-                                            )
-                                    );
-                                }
-                            }
-                        }
-        );
-
-        // =====================================================
-        // NAME
-        // =====================================================
-
-        nameColumn.setCellFactory(
-                column ->
-                        new TableCell<Customer, String>() {
-
-                            @Override
-                            protected void updateItem(
-                                    String item,
-                                    boolean empty
-                            ) {
-
-                                super.updateItem(
-                                        item,
-                                        empty
-                                );
-
-                                if (
-                                        empty ||
-                                        item == null
-                                ) {
-
-                                    setText(null);
-
-                                } else {
-
-                                    setText(item);
-
-                                    setTextFill(
-                                            Color.web(HEADING)
-                                    );
-
-                                    setFont(
-                                            Font.font(
-                                                    "Arial",
-                                                    FontWeight.BOLD,
-                                                    16
-                                            )
-                                    );
-                                }
-                            }
-                        }
-        );
-
-        // =====================================================
-        // EMAIL
-        // =====================================================
-
-        emailColumn.setCellFactory(
-                column ->
-                        createTextCell()
-        );
-
-        // PHONE
-        phoneColumn.setCellFactory(
-                column ->
-                        createTextCell()
-        );
-
-        // CITY
-        cityColumn.setCellFactory(
-                column ->
-                        createTextCell()
-        );
-
-        // =====================================================
-        // STATUS
-        // =====================================================
-
-        statusColumn.setCellFactory(
-                column ->
-                        new TableCell<Customer, String>() {
-
-                            @Override
-                            protected void updateItem(
-                                    String item,
-                                    boolean empty
-                            ) {
-
-                                super.updateItem(
-                                        item,
-                                        empty
-                                );
-
-                                if (
-                                        empty ||
-                                        item == null
-                                ) {
-
-                                    setGraphic(null);
-                                    setText(null);
-
-                                    return;
-                                }
-
-                                Label badge =
-                                        new Label(item);
-
-                                badge.setPadding(
-                                        new Insets(
-                                                7,
-                                                13,
-                                                7,
-                                                13
-                                        )
-                                );
-
-                                badge.setFont(
-                                        Font.font(
-                                                "Arial",
-                                                FontWeight.BOLD,
-                                                14
-                                        )
-                                );
-
-                                if (
-                                        item.equalsIgnoreCase(
-                                                "Active"
-                                        )
-                                ) {
-
-                                    badge.setTextFill(
-                                            Color.web(GREEN)
-                                    );
-
-                                    badge.setStyle(
-                                            "-fx-background-color: " +
-                                            GREEN +
-                                            "18;" +
-                                            "-fx-background-radius: 20;"
-                                    );
-
-                                } else {
-
-                                    badge.setTextFill(
-                                            Color.web(RED)
-                                    );
-
-                                    badge.setStyle(
-                                            "-fx-background-color: " +
-                                            RED +
-                                            "18;" +
-                                            "-fx-background-radius: 20;"
-                                    );
-                                }
-
-                                setAlignment(
-                                        Pos.CENTER_LEFT
-                                );
-
-                                setGraphic(
-                                        badge
-                                );
-                            }
-                        }
-        );
-
-        customerTable.getColumns().addAll(
-                idColumn,
-                nameColumn,
-                emailColumn,
-                phoneColumn,
-                cityColumn,
-                statusColumn
-        );
-
-        // =====================================================
-        // EMPTY STATE
-        // =====================================================
-
-        customerTable.setPlaceholder(
-                createEmptyState()
-        );
-
-        // =====================================================
-        // ROW
-        // =====================================================
-
-        customerTable.setRowFactory(
-                tableView -> {
-
-                    TableRow<Customer> row =
-                            new TableRow<>();
-
-                    row.setStyle(
-                            "-fx-background-color: " +
-                            SURFACE +
-                            ";"
-                    );
-
-                    row.setOnMouseEntered(
-                            event -> {
-
-                                if (!row.isEmpty()) {
-
-                                    row.setStyle(
-                                            "-fx-background-color: " +
-                                            SECONDARY +
-                                            ";"
-                                    );
-                                }
-                            }
-                    );
-
-                    row.setOnMouseExited(
-                            event -> {
-
-                                row.setStyle(
-                                        "-fx-background-color: " +
-                                        SURFACE +
-                                        ";"
-                                );
-                            }
-                    );
-
-                    // DOUBLE CLICK
-                    row.setOnMouseClicked(
-                            event -> {
-
-                                if (
-                                        event.getClickCount() == 2 &&
-                                        !row.isEmpty()
-                                ) {
-
-                                    showCustomerDetails(
-                                            row.getItem()
-                                    );
-                                }
-                            }
-                    );
-
-                    // CONTEXT MENU
-                    ContextMenu contextMenu =
-                            new ContextMenu();
-
-                    MenuItem viewItem =
-                            new MenuItem(
-                                    "View Details"
-                            );
-
-                    MenuItem editItem =
-                            new MenuItem(
-                                    "Edit Customer"
-                            );
-
-                    MenuItem deleteItem =
-                            new MenuItem(
-                                    "Delete Customer"
-                            );
-
-                    viewItem.setOnAction(
-                            event -> {
-
-                                if (!row.isEmpty()) {
-
-                                    showCustomerDetails(
-                                            row.getItem()
-                                    );
-                                }
-                            }
-                    );
-
-                    editItem.setOnAction(
-                            event -> {
-
-                                if (!row.isEmpty()) {
-
-                                    showEditCustomerDialog(
-                                            row.getItem()
-                                    );
-                                }
-                            }
-                    );
-
-                    deleteItem.setOnAction(
-                            event -> {
-
-                                if (!row.isEmpty()) {
-
-                                    deleteCustomer(
-                                            row.getItem()
-                                    );
-                                }
-                            }
-                    );
-
-                    contextMenu.getItems().addAll(
-                            viewItem,
-                            editItem,
-                            new SeparatorMenuItem(),
-                            deleteItem
-                    );
-
-                    row.contextMenuProperty().bind(
-                            javafx.beans.binding.Bindings
-                                    .when(
-                                            row.emptyProperty()
-                                    )
-                                    .then(
-                                            (ContextMenu) null
-                                    )
-                                    .otherwise(
-                                            contextMenu
-                                    )
-                    );
-
-                    return row;
-                }
-        );
-
-        VBox.setVgrow(
-                customerTable,
-                Priority.ALWAYS
-        );
-
-        card.getChildren().addAll(
-                header,
-                customerTable
-        );
-
+        VBox.setVgrow(scrollPane, Priority.ALWAYS);
+        card.getChildren().addAll(header, scrollPane);
         return card;
     }
 
     // =========================================================
-    // NORMAL TABLE CELL
+    // CUSTOMER CARD
     // =========================================================
 
-    private TableCell<Customer, String>
-    createTextCell() {
+    private VBox createCustomerCard(Customer customer, int number) {
 
-        return new TableCell<Customer, String>() {
+        VBox card = new VBox(14);
+        card.setPadding(new Insets(18, 20, 18, 20));
+        card.setMaxWidth(Double.MAX_VALUE);
+        card.setCursor(Cursor.HAND);
 
-            @Override
-            protected void updateItem(
-                    String item,
-                    boolean empty
-            ) {
+        String normal =
+                "-fx-background-color: " + SECONDARY + ";" +
+                "-fx-border-color: " + BORDER + ";" +
+                "-fx-border-radius: 13;" +
+                "-fx-background-radius: 13;";
 
-                super.updateItem(
-                        item,
-                        empty
-                );
+        String hover =
+                "-fx-background-color: #EAF8FA;" +
+                "-fx-border-color: " + BLUE + ";" +
+                "-fx-border-radius: 13;" +
+                "-fx-background-radius: 13;" +
+                "-fx-effect: dropshadow(gaussian, rgba(37,99,235,0.18), 12, 0.15, 0, 3);";
 
-                if (
-                        empty ||
-                        item == null
-                ) {
+        card.setStyle(normal);
 
-                    setText(null);
+        HBox top = new HBox(13);
+        top.setAlignment(Pos.CENTER_LEFT);
 
-                } else {
+        StackPane avatar = createAvatar(safe(customer.getName()));
+        VBox identity = new VBox(3);
 
-                    setText(item);
+        HBox nameLine = new HBox(9);
+        nameLine.setAlignment(Pos.CENTER_LEFT);
 
-                    setTextFill(
-                            Color.web(TEXT)
-                    );
+        Label numberLabel = new Label("#" + number);
+        numberLabel.setTextFill(Color.web(BLUE));
+        numberLabel.setFont(Font.font("Arial", FontWeight.BOLD, 12));
+        numberLabel.setPadding(new Insets(4, 8, 4, 8));
+        numberLabel.setStyle(
+                "-fx-background-color: " + BLUE + "14;" +
+                "-fx-background-radius: 20;"
+        );
 
-                    setFont(
-                            Font.font(
-                                    "Arial",
-                                    15
-                            )
-                    );
-                }
+        Label name = new Label(safe(customer.getName()));
+        name.setTextFill(Color.web(HEADING));
+        name.setFont(Font.font("Arial", FontWeight.BOLD, 18));
+
+        nameLine.getChildren().addAll(numberLabel, name);
+
+        Label role = new Label("Customer");
+        role.setTextFill(Color.web(TEXT));
+        role.setFont(Font.font("Arial", 13));
+        identity.getChildren().addAll(nameLine, role);
+
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        Label statusBadge = createStatusBadge(safe(customer.getStatus()));
+        top.getChildren().addAll(avatar, identity, spacer, statusBadge);
+
+        HBox infoRow = new HBox(14);
+        VBox emailBox = createInfoBox("EMAIL", safe(customer.getEmail()));
+        VBox phoneBox = createInfoBox("PHONE", safe(customer.getPhone()));
+        VBox cityBox = createInfoBox("CITY", safe(customer.getCity()));
+        HBox.setHgrow(emailBox, Priority.ALWAYS);
+        HBox.setHgrow(phoneBox, Priority.ALWAYS);
+        HBox.setHgrow(cityBox, Priority.ALWAYS);
+        infoRow.getChildren().addAll(emailBox, phoneBox, cityBox);
+
+        HBox bottom = new HBox(12);
+        bottom.setAlignment(Pos.CENTER_LEFT);
+
+        Label idLabel = new Label(
+                "Customer #" + number
+        );
+        idLabel.setTextFill(Color.web(TEXT));
+        idLabel.setFont(Font.font("Arial", 12));
+
+        Region bottomSpacer = new Region();
+        HBox.setHgrow(bottomSpacer, Priority.ALWAYS);
+
+        Button editButton = new Button("Edit");
+        styleSmallButton(editButton, TEXT);
+        editButton.setOnAction(event -> showEditCustomerDialog(customer));
+
+        Button viewButton = new Button("View Details →");
+        styleSmallButton(viewButton, BLUE);
+        viewButton.setOnAction(event -> showCustomerDetails(customer, number));
+
+        bottom.getChildren().addAll(
+                idLabel, bottomSpacer, editButton, viewButton
+        );
+
+        card.getChildren().addAll(
+                top, new Separator(), infoRow, bottom
+        );
+
+        card.setOnMouseEntered(event -> {
+            card.setStyle(hover);
+            card.setTranslateY(-2);
+        });
+        card.setOnMouseExited(event -> {
+            card.setStyle(normal);
+            card.setTranslateY(0);
+        });
+
+        card.setOnMouseClicked(event -> {
+            if (event.getClickCount() == 2) {
+                showCustomerDetails(customer, number);
             }
-        };
+        });
+
+        return card;
+    }
+
+    private StackPane createAvatar(String name) {
+
+        Circle circle = new Circle(24, Color.web(BLUE));
+        Label initials = new Label(getInitials(name));
+        initials.setTextFill(Color.WHITE);
+        initials.setFont(Font.font("Arial", FontWeight.BOLD, 13));
+
+        StackPane avatar = new StackPane(circle, initials);
+        avatar.setMinSize(48, 48);
+        avatar.setPrefSize(48, 48);
+        avatar.setMaxSize(48, 48);
+        return avatar;
+    }
+
+    private String getInitials(String name) {
+
+        if (name == null || name.isBlank()) return "?";
+
+        String[] parts = name.trim().split("\\s+");
+        if (parts.length == 1) {
+            return parts[0].substring(0, Math.min(2, parts[0].length())).toUpperCase();
+        }
+
+        return (
+                parts[0].substring(0, 1) +
+                parts[parts.length - 1].substring(0, 1)
+        ).toUpperCase();
+    }
+
+    private VBox createInfoBox(String title, String value) {
+
+        VBox box = new VBox(5);
+        box.setPadding(new Insets(10, 12, 10, 12));
+        box.setStyle(
+                "-fx-background-color: " + SURFACE + ";" +
+                "-fx-background-radius: 9;" +
+                "-fx-border-color: " + BORDER + ";" +
+                "-fx-border-radius: 9;"
+        );
+
+        Label titleLabel = new Label(title);
+        titleLabel.setTextFill(Color.web(TEXT));
+        titleLabel.setFont(Font.font("Arial", FontWeight.BOLD, 11));
+
+        Label valueLabel = new Label(value);
+        valueLabel.setTextFill(Color.web(HEADING));
+        valueLabel.setFont(Font.font("Arial", 14));
+        valueLabel.setWrapText(true);
+
+        box.getChildren().addAll(titleLabel, valueLabel);
+        return box;
+    }
+
+    private Label createStatusBadge(String status) {
+
+        Label badge = new Label(
+                status.equals("-") ? "Unknown" : status
+        );
+        badge.setFont(Font.font("Arial", FontWeight.BOLD, 13));
+        badge.setPadding(new Insets(7, 12, 7, 12));
+
+        if (status.equalsIgnoreCase("Active")) {
+            badge.setTextFill(Color.web(GREEN));
+            badge.setStyle(
+                    "-fx-background-color: " + GREEN + "18;" +
+                    "-fx-background-radius: 20;"
+            );
+        } else {
+            badge.setTextFill(Color.web(RED));
+            badge.setStyle(
+                    "-fx-background-color: " + RED + "18;" +
+                    "-fx-background-radius: 20;"
+            );
+        }
+
+        return badge;
+    }
+
+    private void styleSmallButton(Button button, String color) {
+
+        button.setFont(Font.font("Arial", FontWeight.BOLD, 13));
+        button.setTextFill(
+                color.equals(BLUE) ? Color.WHITE : Color.web(HEADING)
+        );
+        button.setPadding(new Insets(8, 13, 8, 13));
+        button.setCursor(Cursor.HAND);
+
+        String normal = color.equals(BLUE) ? BLUE : SURFACE;
+        String hover = color.equals(BLUE) ? "#1D4ED8" : SECONDARY;
+        String border = color.equals(BLUE) ? BLUE : BORDER;
+
+        button.setStyle(
+                "-fx-background-color: " + normal + ";" +
+                "-fx-background-radius: 8;" +
+                "-fx-border-color: " + border + ";" +
+                "-fx-border-radius: 8;"
+        );
+
+        button.setOnMouseEntered(event -> button.setStyle(
+                "-fx-background-color: " + hover + ";" +
+                "-fx-background-radius: 8;" +
+                "-fx-border-color: " + (color.equals(BLUE) ? "#1D4ED8" : BLUE) + ";" +
+                "-fx-border-radius: 8;"
+        ));
+
+        button.setOnMouseExited(event -> button.setStyle(
+                "-fx-background-color: " + normal + ";" +
+                "-fx-background-radius: 8;" +
+                "-fx-border-color: " + border + ";" +
+                "-fx-border-radius: 8;"
+        ));
+    }
+
+    private void styleTextField(TextField field) {
+        field.setStyle(
+                "-fx-background-color: " + SURFACE + ";" +
+                "-fx-text-fill: " + HEADING + ";" +
+                "-fx-prompt-text-fill: " + TEXT + ";" +
+                "-fx-border-color: " + BORDER + ";" +
+                "-fx-border-radius: 9;" +
+                "-fx-background-radius: 9;" +
+                "-fx-padding: 0 14 0 14;" +
+                "-fx-font-size: 15px;"
+        );
+    }
+
+    private void styleComboBox(ComboBox<String> comboBox) {
+        comboBox.setStyle(
+                "-fx-background-color: " + SURFACE + ";" +
+                "-fx-border-color: " + BORDER + ";" +
+                "-fx-border-radius: 9;" +
+                "-fx-background-radius: 9;" +
+                "-fx-font-size: 14px;"
+        );
     }
 
     // =========================================================
-    // EMPTY STATE
+    // APPLY FILTERS
     // =========================================================
+
+    private void applyFilters() {
+
+        if (customerCards == null) return;
+
+        String search = searchField == null
+                ? ""
+                : searchField.getText().trim().toLowerCase();
+
+        String status = statusFilter == null
+                ? "All"
+                : statusFilter.getValue();
+
+        String sort = sortFilter == null
+                ? "Newest First"
+                : sortFilter.getValue();
+
+        List<Customer> filtered = new ArrayList<>();
+
+        for (Customer customer : customerList) {
+
+            if (!matchesSearch(customer, search)) continue;
+
+            if (
+                    !"All".equals(status) &&
+                    !status.equalsIgnoreCase(safe(customer.getStatus()))
+            ) continue;
+
+            filtered.add(customer);
+        }
+
+        sortCustomers(filtered, sort);
+        renderCustomerCards(filtered);
+    }
+
+    private boolean matchesSearch(Customer customer, String search) {
+
+        if (search.isBlank()) return true;
+
+        return safe(customer.getName()).toLowerCase().contains(search)
+                || safe(customer.getEmail()).toLowerCase().contains(search)
+                || safe(customer.getPhone()).toLowerCase().contains(search)
+                || safe(customer.getCity()).toLowerCase().contains(search);
+    }
+
+    private void sortCustomers(List<Customer> customers, String sort) {
+
+        if ("Name A-Z".equals(sort)) {
+            customers.sort((a, b) -> safe(a.getName()).compareToIgnoreCase(safe(b.getName())));
+        } else if ("Name Z-A".equals(sort)) {
+            customers.sort((a, b) -> safe(b.getName()).compareToIgnoreCase(safe(a.getName())));
+        } else if ("Oldest First".equals(sort)) {
+            java.util.Collections.reverse(customers);
+        }
+    }
+
+    private void renderCustomerCards(List<Customer> customers) {
+
+        customerCards.getChildren().clear();
+
+        if (customers.isEmpty()) {
+            customerCards.getChildren().add(createEmptyState());
+            resultCountLabel.setText("0 customers found");
+            return;
+        }
+
+        int number = 1;
+        for (Customer customer : customers) {
+            customerCards.getChildren().add(
+                    createCustomerCard(customer, number++)
+            );
+        }
+
+        resultCountLabel.setText(
+                customers.size() == 1
+                        ? "1 customer"
+                        : customers.size() + " customers"
+        );
+    }
 
     private VBox createEmptyState() {
 
-        VBox box =
-                new VBox(8);
+        VBox box = new VBox(9);
+        box.setAlignment(Pos.CENTER);
+        box.setPadding(new Insets(45));
 
-        box.setAlignment(
-                Pos.CENTER
+        Label icon = new Label("♙");
+        icon.setTextFill(Color.web(BLUE));
+        icon.setFont(Font.font("Arial", FontWeight.BOLD, 34));
+
+        Label title = new Label("No customers found");
+        title.setTextFill(Color.web(HEADING));
+        title.setFont(Font.font("Arial", FontWeight.BOLD, 18));
+
+        Label subtitle = new Label(
+                "Try changing your search or filter."
         );
+        subtitle.setTextFill(Color.web(TEXT));
+        subtitle.setFont(Font.font("Arial", 14));
 
-        box.setPadding(
-                new Insets(30)
-        );
+        Button addButton = createActionButton("+ Add Customer", ORANGE);
+        addButton.setOnAction(event -> showAddCustomerDialog());
 
-        Label icon =
-                new Label("♙");
-
-        icon.setTextFill(
-                Color.web(BLUE)
-        );
-
-        icon.setFont(
-                Font.font(
-                        "Arial",
-                        FontWeight.BOLD,
-                        30
-                )
-        );
-
-        Label title =
-                new Label(
-                        "No customers found"
-                );
-
-        title.setTextFill(
-                Color.web(HEADING)
-        );
-
-        title.setFont(
-                Font.font(
-                        "Arial",
-                        FontWeight.BOLD,
-                        16
-                )
-        );
-
-        Label subtitle =
-                new Label(
-                        "Customers registered in RoadGuardian will appear here."
-                );
-
-        subtitle.setTextFill(
-                Color.web(TEXT)
-        );
-
-        subtitle.setFont(
-                Font.font(
-                        "Arial",
-                        14
-                )
-        );
-
-        box.getChildren().addAll(
-                icon,
-                title,
-                subtitle
-        );
-
+        box.getChildren().addAll(icon, title, subtitle, addButton);
         return box;
     }
 
@@ -1346,24 +970,12 @@ public class CustomerManagementPage extends AdminSectionPage {
     private void loadCustomers() {
 
         try {
-
-            List<Customer> customers =
-                    controller.getAllCustomers();
-
-            customerList.setAll(
-                    customers
-            );
-
-            updateStatistics(
-                    customers
-            );
-
+            List<Customer> customers = controller.getAllCustomers();
+            customerList.setAll(customers);
+            updateStatistics(customers);
+            applyFilters();
         } catch (Exception e) {
-
-            showError(
-                    "Unable to Load Customers",
-                    e.getMessage()
-            );
+            showError("Unable to Load Customers", e.getMessage());
         }
     }
 
@@ -1371,56 +983,16 @@ public class CustomerManagementPage extends AdminSectionPage {
     // SEARCH
     // =========================================================
 
-    private void searchCustomers(
-            String searchText
-    ) {
-
-        try {
-
-            List<Customer> customers =
-                    controller.searchCustomers(
-                            searchText
-                    );
-
-            customerList.setAll(
-                    customers
-            );
-
-        } catch (Exception e) {
-
-            showError(
-                    "Search Failed",
-                    e.getMessage()
-            );
-        }
+    private void searchCustomers(String searchText) {
+        applyFilters();
     }
 
     // =========================================================
     // FILTER
     // =========================================================
 
-    private void filterByStatus(
-            String status
-    ) {
-
-        try {
-
-            List<Customer> customers =
-                    controller.getCustomersByStatus(
-                            status
-                    );
-
-            customerList.setAll(
-                    customers
-            );
-
-        } catch (Exception e) {
-
-            showError(
-                    "Filter Failed",
-                    e.getMessage()
-            );
-        }
+    private void filterByStatus(String status) {
+        applyFilters();
     }
 
     // =========================================================
@@ -1985,7 +1557,8 @@ public class CustomerManagementPage extends AdminSectionPage {
     // =========================================================
 
     private void showCustomerDetails(
-            Customer customer
+            Customer customer,
+            int number
     ) {
 
         Dialog<Void> dialog =
@@ -2026,7 +1599,7 @@ public class CustomerManagementPage extends AdminSectionPage {
 
                 createDetailRow(
                         "Customer ID",
-                        customer.getCustomerId()
+                        "#" + number
                 ),
 
                 createDetailRow(

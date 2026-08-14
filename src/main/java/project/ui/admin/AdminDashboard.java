@@ -22,36 +22,49 @@ import project.firebase.FirebaseConfig;
 
 public class AdminDashboard {
 
-    // =========================================================
-    // AQUA MIST THEME
-    // =========================================================
+ 
+//THeme 
 
     private static final String BG = "#D6F0F3";
     private static final String SIDEBAR = "#C4D9E0";
     private static final String SURFACE = "#EEF9FA";
     private static final String SECONDARY = "#DFF3F5";
 
-    private static final String ORANGE = "#F97316";
-    private static final String ORANGE_HOVER = "#EA580C";
+    // Blue
+    private static final String ORANGE = "#2563EB";
+    private static final String ORANGE_HOVER = "#1D4ED8";
+
+    // Orange
+    private static final String BLUE = "#F97316";
+    private static final String BLUE_HOVER = "#EA580C";
 
     private static final String HEADING = "#172033";
     private static final String TEXT = "#526274";
 
-    private static final String BLUE = "#2563EB";
     private static final String GREEN = "#16A34A";
-    private static final String RED = "#DC2626";
+    private static final String GREEN_HOVER = "#15803D";
+
+    private static final String RED = "#a73232";
+    private static final String RED_HOVER = "#B91C1C";
 
     private static final String BORDER = "#B8D4D9";
 
-    // =========================================================
-    // FIELDS
-    // =========================================================
+     // FIELDS
+     
 
     private final Stage stage;
 
     private BorderPane root;
+
     private VBox sidebar;
+
     private VBox contentArea;
+
+    private ScrollPane contentScroll;
+
+    private boolean sidebarCollapsed = false;
+
+    // Navigation buttons
 
     private Button dashboardButton;
     private Button customersButton;
@@ -65,6 +78,17 @@ public class AdminDashboard {
     private Button notificationsButton;
     private Button reportsButton;
     private Button settingsButton;
+
+    // Sidebar toggle
+
+    private Button sidebarToggleButton;
+
+    // Brand labels
+
+    private Label brandTitle;
+    private Label brandSubtitle;
+
+    // Dashboard
 
     private DashboardController dashboardController;
 
@@ -100,45 +124,314 @@ public class AdminDashboard {
     // GET VIEW
     // =========================================================
 
-    public BorderPane getView() {
+   public BorderPane getView() {
 
-        root =
-                new BorderPane();
+    root = new BorderPane();
 
-        root.setStyle(
-                "-fx-background-color: " +
-                BG +
-                ";"
-        );
+    root.setStyle(
+            "-fx-background-color: " +
+            BG +
+            ";"
+    );
 
-        sidebar =
-                createSidebar();
+    sidebar = createSidebar();
 
-        contentArea =
-                new VBox();
+    // Main content
+    VBox mainArea =
+            new VBox();
 
-        contentArea.setFillWidth(
-                true
-        );
+    mainArea.setFillWidth(true);
 
-        contentArea.setStyle(
-                "-fx-background-color: " +
-                BG +
-                ";"
-        );
+    // Top bar
+    HBox topBar =
+            createMainTopBar();
 
-        root.setLeft(
-                sidebar
-        );
+    // Scrollable content
+    contentArea =
+            new VBox();
 
-        root.setCenter(
-                contentArea
-        );
+    contentArea.setFillWidth(true);
 
-        showDashboard();
+    contentScroll =
+            new ScrollPane();
 
-        return root;
-    }
+    contentScroll.setContent(
+            contentArea
+    );
+
+    contentScroll.setFitToWidth(true);
+
+    contentScroll.setHbarPolicy(
+            ScrollPane.ScrollBarPolicy.NEVER
+    );
+
+    contentScroll.setVbarPolicy(
+            ScrollPane.ScrollBarPolicy.AS_NEEDED
+    );
+
+    mainArea.getChildren().addAll(
+            topBar,
+            contentScroll
+    );
+
+    VBox.setVgrow(
+            contentScroll,
+            Priority.ALWAYS
+    );
+
+    root.setLeft(
+            sidebar
+    );
+
+    root.setCenter(
+            mainArea
+    );
+
+    showDashboard();
+
+    return root;
+}
+
+private HBox createMainTopBar() {
+
+    HBox topBar =
+            new HBox(15);
+
+    topBar.setAlignment(
+            Pos.CENTER_LEFT
+    );
+
+    topBar.setPadding(
+            new Insets(
+                    14,
+                    24,
+                    14,
+                    24
+            )
+    );
+
+    topBar.setStyle(
+            "-fx-background-color: " +
+            SURFACE +
+            ";" +
+            "-fx-border-color: " +
+            BORDER +
+            ";" +
+            "-fx-border-width: 0 0 1 0;"
+    );
+
+    sidebarToggleButton =
+            new Button("=");
+
+    sidebarToggleButton.setPrefSize(
+            42,
+            42
+    );
+
+    sidebarToggleButton.setFont(
+            Font.font(
+                    "Arial",
+                    FontWeight.BOLD,
+                    22
+            )
+    );
+
+    sidebarToggleButton.setTextFill(
+            Color.web(HEADING)
+    );
+
+    sidebarToggleButton.setStyle(
+            "-fx-background-color: " +
+            SECONDARY +
+            ";" +
+            "-fx-background-radius: 9;" +
+            "-fx-cursor: hand;"
+    );
+
+    addButtonHover(
+            sidebarToggleButton,
+            SECONDARY,
+            SURFACE
+    );
+
+    sidebarToggleButton.setOnAction(
+            event ->
+                    toggleSidebar()
+    );
+
+    Label title =
+            new Label(
+                    "Dashboard"
+            );
+
+    title.setTextFill(
+            Color.web(HEADING)
+    );
+
+    title.setFont(
+            Font.font(
+                    "Arial",
+                    FontWeight.BOLD,
+                    22
+            )
+    );
+
+    Region spacer =
+            new Region();
+
+    HBox.setHgrow(
+            spacer,
+            Priority.ALWAYS
+    );
+
+    // Admin profile
+    HBox profile =
+            createAdminProfile();
+
+    topBar.getChildren().addAll(
+            sidebarToggleButton,
+            title,
+            spacer,
+            profile
+    );
+
+    return topBar;
+}
+
+private HBox createAdminProfile() {
+
+    HBox profile = new HBox(10);
+
+    profile.setAlignment(
+            Pos.CENTER_LEFT
+    );
+
+    profile.setPadding(new Insets(7, 16, 7, 8));
+
+    profile.setStyle(
+            "-fx-background-color: " +
+            SURFACE +
+            ";" +
+            "-fx-border-color: " +
+            BORDER +
+            ";" +
+            "-fx-border-radius: 25;" +
+            "-fx-background-radius: 25;" +
+            "-fx-cursor: hand;"
+    );
+
+    Circle avatar =
+            new Circle(
+                    20,
+                    Color.web("#2563EB")
+            );
+
+    Label initial =
+            new Label("A");
+
+    initial.setTextFill(
+            Color.WHITE
+    );
+
+    initial.setFont(
+            Font.font(
+                    "Arial",
+                    FontWeight.BOLD,
+                    16
+            )
+    );
+
+    StackPane avatarBox =
+            new StackPane(
+                    avatar,
+                    initial
+            );
+
+    avatarBox.setPrefSize(
+            40,
+            40
+    );
+
+    VBox adminInfo =
+            new VBox(1);
+
+    Label adminName =
+            new Label(
+                    "Admin"
+            );
+
+    adminName.setTextFill(
+            Color.web(HEADING)
+    );
+
+    adminName.setFont(
+            Font.font(
+                    "Arial",
+                    FontWeight.BOLD,
+                    15
+            )
+    );
+
+    Label adminRole =
+            new Label(
+                    "Super Administrator"
+            );
+
+    adminRole.setTextFill(
+            Color.web(TEXT)
+    );
+
+    adminRole.setFont(
+            Font.font(
+                    "Arial",
+                    12
+            )
+    );
+
+    adminInfo.getChildren().addAll(
+            adminName,
+            adminRole
+    );
+
+    profile.getChildren().addAll(
+            avatarBox,
+            adminInfo
+    );
+
+    // =====================================================
+    // HOVER EFFECT
+    // =====================================================
+
+    profile.setOnMouseEntered(
+            event ->
+                    profile.setStyle(
+                            "-fx-background-color: white;" +
+                            "-fx-border-color: " +
+                            ORANGE +
+                            ";" +
+                            "-fx-border-radius: 25;" +
+                            "-fx-background-radius: 25;" +
+                            "-fx-cursor: hand;"
+                    )
+    );
+
+    profile.setOnMouseExited(
+            event ->
+                    profile.setStyle(
+                            "-fx-background-color: " +
+                            SURFACE +
+                            ";" +
+                            "-fx-border-color: " +
+                            BORDER +
+                            ";" +
+                            "-fx-border-radius: 25;" +
+                            "-fx-background-radius: 25;" +
+                            "-fx-cursor: hand;"
+                    )
+    );
+
+    return profile;
+}
 
     // =========================================================
     // SIDEBAR
@@ -150,28 +443,28 @@ public class AdminDashboard {
                 new VBox();
 
         side.setPrefWidth(
-                265
+                270
         );
 
         side.setMinWidth(
-                265
+                270
         );
 
         side.setMaxWidth(
-                265
+                270
         );
 
         side.setPadding(
                 new Insets(
-                        28,
-                        17,
-                        20,
-                        17
+                        16,
+                        12,
+                        25,
+                        12
                 )
         );
 
         side.setSpacing(
-                8
+                5
         );
 
         side.setStyle(
@@ -183,7 +476,6 @@ public class AdminDashboard {
                 ";" +
                 "-fx-border-width: 0 1 0 0;"
         );
-
         // =====================================================
         // BRAND
         // =====================================================
@@ -191,40 +483,58 @@ public class AdminDashboard {
         VBox brand =
                 new VBox(5);
 
+        brand.setAlignment(
+                Pos.CENTER_LEFT
+        );
+
         brand.setPadding(
                 new Insets(
                         4,
                         11,
-                        25,
+                        22,
                         11
                 )
         );
 
         Label logo =
-                new Label("◈");
+                new Label("✓");
 
         logo.setTextFill(
-                Color.web(BLUE)
+                Color.WHITE
+        );
+
+        logo.setAlignment(
+                Pos.CENTER
+        );
+
+        logo.setPrefSize(
+                46,
+                46
+        );
+
+        logo.setStyle(
+                "-fx-background-color: #2563EB;" +
+                "-fx-background-radius: 50%;"
         );
 
         logo.setFont(
                 Font.font(
                         "Arial",
                         FontWeight.BOLD,
-                        32
+                        27
                 )
         );
 
-        Label title =
+        brandTitle =
                 new Label(
                         "ROADGUARDIAN"
                 );
 
-        title.setTextFill(
+        brandTitle.setTextFill(
                 Color.web(HEADING)
         );
 
-        title.setFont(
+        brandTitle.setFont(
                 Font.font(
                         "Arial",
                         FontWeight.BOLD,
@@ -232,16 +542,16 @@ public class AdminDashboard {
                 )
         );
 
-        Label subtitle =
+        brandSubtitle =
                 new Label(
                         "ADMIN PANEL"
                 );
 
-        subtitle.setTextFill(
+        brandSubtitle.setTextFill(
                 Color.web(GREEN)
         );
 
-        subtitle.setFont(
+        brandSubtitle.setFont(
                 Font.font(
                         "Arial",
                         FontWeight.BOLD,
@@ -251,8 +561,8 @@ public class AdminDashboard {
 
         brand.getChildren().addAll(
                 logo,
-                title,
-                subtitle
+                brandTitle,
+                brandSubtitle
         );
 
         side.getChildren().add(
@@ -396,114 +706,348 @@ public class AdminDashboard {
         );
 
         mechanicsButton.setOnAction(
-            event -> showMechanics()
+                event ->
+                        showMechanics()
         );
 
         vehiclesButton.setOnAction(
-            event -> showVehicles()
+                event ->
+                        showVehicles()
         );
 
         serviceRequestButton.setOnAction(
-            event -> showServiceRequests()
+                event ->
+                        showServiceRequests()
         );
 
         sosButton.setOnAction(
                 event ->
-                        showPlaceholder(
-                                "SOS Requests",
-                                "Monitor and manage emergency requests."
-                        )
+                        showSOSRequests()
         );
 
         servicesButton.setOnAction(
                 event ->
-                        showPlaceholder(
-                                "Services",
-                                "Manage RoadGuardian services."
-                        )
+                        showServices()
         );
 
         reviewsButton.setOnAction(
                 event ->
-                        showPlaceholder(
-                                "Reviews",
-                                "Manage customer reviews."
-                        )
+                        showReviews()
         );
 
         complaintsButton.setOnAction(
                 event ->
-                        showPlaceholder(
-                                "Complaints",
-                                "Manage customer complaints."
-                        )
+                        showComplaints()
         );
 
         notificationsButton.setOnAction(
                 event ->
-                        showPlaceholder(
-                                "Notifications",
-                                "Manage system notifications."
-                        )
+                        showNotifications()
         );
 
         reportsButton.setOnAction(
                 event ->
-                        showPlaceholder(
-                                "Reports",
-                                "View RoadGuardian reports."
-                        )
+                        showReports()
         );
 
         settingsButton.setOnAction(
                 event ->
-                        showPlaceholder(
-                                "Settings",
-                                "Manage administrator settings."
-                        )
+                        showSettings()
         );
 
         return side;
     }
+
+    // =========================================================
+    // SIDEBAR TOGGLE
+    // The single top-bar "=" button hides/shows the sidebar.
+    // =========================================================
+
+   private void toggleSidebar() {
+
+    sidebarCollapsed = !sidebarCollapsed;
+
+    if (sidebarCollapsed) {
+
+        // Hide complete sidebar
+        sidebar.setVisible(false);
+        sidebar.setManaged(false);
+
+    } else {
+
+        // Show complete sidebar
+        sidebar.setVisible(true);
+        sidebar.setManaged(true);
+    }
+}
+
+    // =========================================================
+    // NAVIGATION TEXT VISIBILITY
+    // =========================================================
+
+    private void setNavigationTextVisible(
+            boolean visible
+    ) {
+
+        Button[] buttons = {
+
+                dashboardButton,
+                customersButton,
+                mechanicsButton,
+                vehiclesButton,
+                serviceRequestButton,
+                sosButton,
+                servicesButton,
+                reviewsButton,
+                complaintsButton,
+                notificationsButton,
+                reportsButton,
+                settingsButton
+
+        };
+
+        for (
+                Button button :
+                buttons
+        ) {
+
+            if (
+                    button.getGraphic()
+                            instanceof HBox
+            ) {
+
+                HBox content =
+                        (HBox)
+                        button.getGraphic();
+
+                if (
+                        content.getChildren()
+                                .size() > 1
+                ) {
+
+                    javafx.scene.Node textNode =
+                            content.getChildren()
+                                    .get(1);
+
+                    textNode.setVisible(
+                            visible
+                    );
+
+                    textNode.setManaged(
+                            visible
+                    );
+                }
+            }
+
+            if (visible) {
+
+                button.setAlignment(
+                        Pos.CENTER_LEFT
+                );
+
+                button.setPadding(
+                        new Insets(
+                                0,
+                                16,
+                                0,
+                                16
+                        )
+                );
+
+            } else {
+
+                button.setAlignment(
+                        Pos.CENTER
+                );
+
+                button.setPadding(
+                        new Insets(
+                                0
+                        )
+                );
+            }
+        }
+    }
+
+    // =========================================================
+    // SHOW SERVICE REQUESTS
+    // =========================================================
+
     private void showServiceRequests() {
 
-    setActive(
-        serviceRequestButton
-    );
+        setActive(
+                serviceRequestButton
+        );
 
-    ServiceRequestManagementPage page =
-            new ServiceRequestManagementPage();
+        ServiceRequestManagementPage page =
+                new ServiceRequestManagementPage();
 
-    contentArea.getChildren().setAll(
-        page.getView()
-    );
-}
+        contentArea.getChildren().setAll(
+                page.getView()
+        );
+    }
+
+    // =========================================================
+    // SHOW SOS REQUESTS
+    // =========================================================
+
+    private void showSOSRequests() {
+
+        setActive(
+                sosButton
+        );
+
+        SOSRequestManagementPage page =
+                new SOSRequestManagementPage();
+
+        contentArea.getChildren().setAll(
+                page.getView()
+        );
+    }
+
+    // =========================================================
+    // SHOW MECHANICS
+    // =========================================================
+
+    private void showMechanics() {
+
+        setActive(
+                mechanicsButton
+        );
+
+        MechanicManagementPage page =
+                new MechanicManagementPage();
+
+        contentArea.getChildren().setAll(
+                page.getView()
+        );
+    }
+
+    // =========================================================
+    // SHOW VEHICLES
+    // =========================================================
+
     private void showVehicles() {
 
         setActive(
-            vehiclesButton
+                vehiclesButton
         );
 
         VehicleManagementPage page =
                 new VehicleManagementPage();
 
         contentArea.getChildren().setAll(
-            page.getView()
+                page.getView()
         );
     }
-    private void showMechanics() {
 
-    setActive(
-        mechanicsButton
-    );
+    // =========================================================
+    // SHOW SERVICES
+    // =========================================================
 
-    MechanicManagementPage page =
-            new MechanicManagementPage();
+    private void showServices() {
 
-    contentArea.getChildren().setAll(
-        page.getView()
-    );
-}
+        setActive(
+                servicesButton
+        );
+
+        ServiceManagementPage page =
+                new ServiceManagementPage();
+
+        contentArea.getChildren().setAll(
+                page.getView()
+        );
+    }
+
+    // =========================================================
+    // SHOW REVIEWS
+    // =========================================================
+
+    private void showReviews() {
+
+        setActive(
+                reviewsButton
+        );
+
+        ReviewManagementPage page =
+                new ReviewManagementPage();
+
+        contentArea.getChildren().setAll(
+                page.getView()
+        );
+    }
+
+    // =========================================================
+    // SHOW COMPLAINTS
+    // =========================================================
+
+    private void showComplaints() {
+
+        setActive(
+                complaintsButton
+        );
+
+        ComplaintManagementPage page =
+                new ComplaintManagementPage();
+
+        contentArea.getChildren().setAll(
+                page.getView()
+        );
+    }
+
+    // =========================================================
+    // SHOW NOTIFICATIONS
+    // =========================================================
+
+    private void showNotifications() {
+
+        setActive(
+                notificationsButton
+        );
+
+        NotificationManagementPage page =
+                new NotificationManagementPage();
+
+        contentArea.getChildren().setAll(
+                page.getView()
+        );
+    }
+
+    // =========================================================
+    // SHOW REPORTS
+    // =========================================================
+
+    private void showReports() {
+
+        setActive(
+                reportsButton
+        );
+
+        ReportManagementPage page =
+                new ReportManagementPage();
+
+        contentArea.getChildren().setAll(
+                page.getView()
+        );
+    }
+
+    // =========================================================
+    // SHOW SETTINGS
+    // =========================================================
+
+    private void showSettings() {
+
+        setActive(
+                settingsButton
+        );
+
+        SettingsPage page =
+                new SettingsPage();
+
+        contentArea.getChildren().setAll(
+                page.getView()
+        );
+    }
 
     // =========================================================
     // NAVIGATION BUTTON
@@ -589,7 +1133,8 @@ public class AdminDashboard {
 
         button.setStyle(
                 "-fx-background-color: transparent;" +
-                "-fx-background-radius: 9;"
+                "-fx-background-radius: 9;" +
+                "-fx-cursor: hand;"
         );
 
         button.setOnMouseEntered(
@@ -606,7 +1151,8 @@ public class AdminDashboard {
                                 "-fx-background-color: " +
                                 SECONDARY +
                                 ";" +
-                                "-fx-background-radius: 9;"
+                                "-fx-background-radius: 9;" +
+                                "-fx-cursor: hand;"
                         );
                     }
                 }
@@ -624,7 +1170,8 @@ public class AdminDashboard {
 
                         button.setStyle(
                                 "-fx-background-color: transparent;" +
-                                "-fx-background-radius: 9;"
+                                "-fx-background-radius: 9;" +
+                                "-fx-cursor: hand;"
                         );
                     }
                 }
@@ -670,7 +1217,8 @@ public class AdminDashboard {
 
             button.setStyle(
                     "-fx-background-color: transparent;" +
-                    "-fx-background-radius: 9;"
+                    "-fx-background-radius: 9;" +
+                    "-fx-cursor: hand;"
             );
         }
 
@@ -683,7 +1231,8 @@ public class AdminDashboard {
                 "-fx-background-color: " +
                 ORANGE +
                 ";" +
-                "-fx-background-radius: 9;"
+                "-fx-background-radius: 9;" +
+                "-fx-cursor: hand;"
         );
     }
 
@@ -701,7 +1250,9 @@ public class AdminDashboard {
         );
 
         box.setPadding(
-                new Insets(15)
+                new Insets(
+                        15
+                )
         );
 
         box.setStyle(
@@ -812,7 +1363,8 @@ public class AdminDashboard {
         );
 
         button.setStyle(
-                "-fx-background-color: transparent;"
+                "-fx-background-color: transparent;" +
+                "-fx-cursor: hand;"
         );
 
         button.setOnMouseEntered(
@@ -821,14 +1373,16 @@ public class AdminDashboard {
                                 "-fx-background-color: " +
                                 RED +
                                 "18;" +
-                                "-fx-background-radius: 9;"
+                                "-fx-background-radius: 9;" +
+                                "-fx-cursor: hand;"
                         )
         );
 
         button.setOnMouseExited(
                 event ->
                         button.setStyle(
-                                "-fx-background-color: transparent;"
+                                "-fx-background-color: transparent;" +
+                                "-fx-cursor: hand;"
                         )
         );
 
@@ -888,6 +1442,13 @@ public class AdminDashboard {
         contentArea.getChildren().setAll(
                 createDashboard()
         );
+
+        if (contentScroll != null) {
+
+            contentScroll.setVvalue(
+                    0
+            );
+        }
     }
 
     // =========================================================
@@ -901,8 +1462,15 @@ public class AdminDashboard {
 
         page.setPadding(
                 new Insets(
+                        28,
+                        32,
+                        45,
                         32
                 )
+        );
+
+        page.setFillWidth(
+                true
         );
 
         page.setStyle(
@@ -911,20 +1479,26 @@ public class AdminDashboard {
                 ";"
         );
 
+        // =====================================================
         // HEADER
+        // =====================================================
 
         HBox header =
                 createHeader(
-                        "Dashboard",
-                        "Welcome back, Admin! Here's what's happening with RoadGuardian."
-                );
+                "RoadGuardian Overview",
+                "Here's a quick overview of what's happening across your roadside assistance platform."
+        );
 
+        // =====================================================
         // STATS
+        // =====================================================
 
         HBox stats =
                 createStats();
 
+        // =====================================================
         // MIDDLE
+        // =====================================================
 
         HBox middle =
                 new HBox(20);
@@ -950,7 +1524,9 @@ public class AdminDashboard {
                 sosCard
         );
 
+        // =====================================================
         // BOTTOM
+        // =====================================================
 
         HBox bottom =
                 new HBox(20);
@@ -983,16 +1559,6 @@ public class AdminDashboard {
                 bottom
         );
 
-        VBox.setVgrow(
-                middle,
-                Priority.ALWAYS
-        );
-
-        VBox.setVgrow(
-                bottom,
-                Priority.ALWAYS
-        );
-
         return page;
     }
 
@@ -1010,6 +1576,15 @@ public class AdminDashboard {
 
         header.setAlignment(
                 Pos.CENTER_LEFT
+        );
+
+        header.setPadding(
+                new Insets(
+                        0,
+                        0,
+                        8,
+                        0
+                )
         );
 
         VBox textBox =
@@ -1055,82 +1630,8 @@ public class AdminDashboard {
         HBox.setHgrow(
                 spacer,
                 Priority.ALWAYS
-        );
-
-        Circle avatar =
-                new Circle(
-                        25,
-                        Color.web(ORANGE)
-                );
-
-        Label initial =
-                new Label("A");
-
-        initial.setTextFill(
-                Color.WHITE
-        );
-
-        initial.setFont(
-                Font.font(
-                        "Arial",
-                        FontWeight.BOLD,
-                        18
-                )
-        );
-
-        StackPane avatarBox =
-                new StackPane(
-                        avatar,
-                        initial
-                );
-
-        VBox adminInfo =
-                new VBox(3);
-
-        Label admin =
-                new Label(
-                        "Admin"
-                );
-
-        admin.setTextFill(
-                Color.web(HEADING)
-        );
-
-        admin.setFont(
-                Font.font(
-                        "Arial",
-                        FontWeight.BOLD,
-                        16
-                )
-        );
-
-        Label role =
-                new Label(
-                        "Super Administrator"
-                );
-
-        role.setTextFill(
-                Color.web(TEXT)
-        );
-
-        role.setFont(
-                Font.font(
-                        "Arial",
-                        13
-                )
-        );
-
-        adminInfo.getChildren().addAll(
-                admin,
-                role
-        );
-
-        header.getChildren().addAll(
-                textBox,
-                spacer,
-                avatarBox,
-                adminInfo
-        );
+        ); 
+        header.getChildren().addAll(textBox, spacer);
 
         return header;
     }
@@ -1183,7 +1684,7 @@ public class AdminDashboard {
                         ),
                         "Total Customers",
                         "Registered customers",
-                        BLUE
+                        ORANGE
                 ),
 
                 createStatCard(
@@ -1203,7 +1704,7 @@ public class AdminDashboard {
                         ),
                         "Total Vehicles",
                         "Registered vehicles",
-                        ORANGE
+                        BLUE
                 ),
 
                 createStatCard(
@@ -1213,7 +1714,7 @@ public class AdminDashboard {
                         ),
                         "Service Requests",
                         "Total requests",
-                        BLUE
+                        ORANGE
                 ),
 
                 createStatCard(
@@ -1409,111 +1910,312 @@ public class AdminDashboard {
                 Priority.ALWAYS
         );
 
-        ComboBox<String> period =
-                new ComboBox<>();
+        Label live =
+                new Label(
+                        "Live Overview"
+                );
 
-        period.getItems().addAll(
-                "This Month",
-                "This Week",
-                "This Year"
+        live.setTextFill(
+                Color.web(GREEN)
         );
 
-        period.setValue(
-                "This Month"
-        );
-
-        period.setPrefWidth(
-                140
-        );
-
-        period.setPrefHeight(
-                38
-        );
-
-        period.setStyle(
-                "-fx-font-size: 14px;" +
-                "-fx-background-color: " +
-                SURFACE +
-                ";" +
-                "-fx-border-color: " +
-                BORDER +
-                ";"
+        live.setFont(
+                Font.font(
+                        "Arial",
+                        FontWeight.BOLD,
+                        14
+                )
         );
 
         titleRow.getChildren().addAll(
                 title,
                 spacer,
-                period
+                live
         );
 
-        HBox chartArea =
-                new HBox();
+        int completed =
+                dashboardController.getValue(
+                        dashboardData,
+                        "completedRequests"
+                );
 
-        chartArea.setAlignment(
-                Pos.CENTER
+        int progress =
+                dashboardController.getValue(
+                        dashboardData,
+                        "inProgressRequests"
+                );
+
+        int pending =
+                dashboardController.getValue(
+                        dashboardData,
+                        "pendingRequests"
+                );
+
+        int cancelled =
+                dashboardController.getValue(
+                        dashboardData,
+                        "cancelledRequests"
+                );
+
+        int total =
+                dashboardController.getValue(
+                        dashboardData,
+                        "serviceRequests"
+                );
+
+        if (total == 0) {
+
+            total =
+                    completed +
+                    progress +
+                    pending +
+                    cancelled;
+        }
+
+        HBox content =
+                new HBox(24);
+
+        content.setAlignment(
+                Pos.CENTER_LEFT
         );
 
         StackPane chart =
                 createDonutChart();
 
-        VBox legend =
-                new VBox(14);
+        chart.setPrefWidth(
+                210
+        );
 
-        legend.setPadding(
-                new Insets(
-                        10,
-                        20,
-                        10,
+        VBox statusBox =
+                new VBox(12);
+
+        statusBox.setPrefWidth(
+                190
+        );
+
+        statusBox.getChildren().addAll(
+
+                requestStatusRow(
+                        "Pending",
+                        pending,
+                        BLUE
+                ),
+
+                requestStatusRow(
+                        "In Progress",
+                        progress,
+                        GREEN
+                ),
+
+                requestStatusRow(
+                        "Completed",
+                        completed,
+                        ORANGE
+                ),
+
+                requestStatusRow(
+                        "Cancelled",
+                        cancelled,
+                        RED
+                )
+        );
+
+        VBox actionBox =
+                new VBox(9);
+
+        actionBox.setAlignment(
+                Pos.CENTER
+        );
+
+        Label totalLabel =
+                new Label(
+                        "Total Requests"
+                );
+
+        totalLabel.setTextFill(
+                Color.web(TEXT)
+        );
+
+        totalLabel.setFont(
+                Font.font(
+                        "Arial",
+                        FontWeight.BOLD,
+                        15
+                )
+        );
+
+        Label totalValue =
+                new Label(
+                        String.valueOf(total)
+                );
+
+        totalValue.setTextFill(
+                Color.web(HEADING)
+        );
+
+        totalValue.setFont(
+                Font.font(
+                        "Arial",
+                        FontWeight.BOLD,
                         30
                 )
         );
 
-        legend.getChildren().addAll(
-                legendRow(
-                        BLUE,
-                        "Completed",
-                        "70",
-                        "56%"
-                ),
+        Label info =
+                new Label(
+                        "Monitor and manage\nservice requests."
+                );
 
-                legendRow(
-                        GREEN,
-                        "In Progress",
-                        "25",
-                        "20%"
-                ),
+        info.setWrapText(
+                true
+        );
 
-                legendRow(
-                        ORANGE,
-                        "Pending",
-                        "20",
-                        "16%"
-                ),
+        info.setTextAlignment(
+                javafx.scene.text.TextAlignment.CENTER
+        );
 
-                legendRow(
-                        RED,
-                        "Cancelled",
-                        "10",
-                        "8%"
+        info.setTextFill(
+                Color.web(TEXT)
+        );
+
+        info.setFont(
+                Font.font(
+                        "Arial",
+                        14
                 )
         );
 
-        chartArea.getChildren().addAll(
-                chart,
-                legend
+        Button manageButton =
+                new Button(
+                        "Manage Requests  →"
+                );
+
+        stylePrimaryButton(
+                manageButton,
+                ORANGE,
+                ORANGE_HOVER
         );
 
-        VBox.setVgrow(
-                chartArea,
+        manageButton.setOnAction(
+                event ->
+                        showServiceRequests()
+        );
+
+        addButtonHover(
+                manageButton,
+                ORANGE,
+                ORANGE_HOVER
+        );
+
+        actionBox.getChildren().addAll(
+                totalLabel,
+                totalValue,
+                info,
+                manageButton
+        );
+
+        content.getChildren().addAll(
+                chart,
+                statusBox,
+                actionBox
+        );
+
+        HBox.setHgrow(
+                chart,
+                Priority.ALWAYS
+        );
+
+        HBox.setHgrow(
+                statusBox,
+                Priority.ALWAYS
+        );
+
+        HBox.setHgrow(
+                actionBox,
                 Priority.ALWAYS
         );
 
         card.getChildren().addAll(
                 titleRow,
-                chartArea
+                content
         );
 
         return card;
+    }
+
+    // =========================================================
+    // REQUEST STATUS ROW
+    // =========================================================
+
+    private HBox requestStatusRow(
+            String title,
+            int value,
+            String color
+    ) {
+
+        HBox row =
+                new HBox(10);
+
+        row.setAlignment(
+                Pos.CENTER_LEFT
+        );
+
+        Circle dot =
+                new Circle(
+                        6,
+                        Color.web(color)
+                );
+
+        Label name =
+                new Label(
+                        title
+                );
+
+        name.setTextFill(
+                Color.web(HEADING)
+        );
+
+        name.setFont(
+                Font.font(
+                        "Arial",
+                        FontWeight.BOLD,
+                        15
+                )
+        );
+
+        Region spacer =
+                new Region();
+
+        HBox.setHgrow(
+                spacer,
+                Priority.ALWAYS
+        );
+
+        Label count =
+                new Label(
+                        String.valueOf(value)
+                );
+
+        count.setTextFill(
+                Color.web(HEADING)
+        );
+
+        count.setFont(
+                Font.font(
+                        "Arial",
+                        FontWeight.BOLD,
+                        16
+                )
+        );
+
+        row.getChildren().addAll(
+                dot,
+                name,
+                spacer,
+                count
+        );
+
+        return row;
     }
 
     // =========================================================
@@ -1530,119 +2232,239 @@ public class AdminDashboard {
                 210
         );
 
-        javafx.scene.shape.Arc completed =
-                new javafx.scene.shape.Arc(
-                        115,
-                        105,
-                        75,
-                        75,
-                        90,
-                        -201.6
+        int completed =
+                dashboardController.getValue(
+                        dashboardData,
+                        "completedRequests"
                 );
 
-        completed.setType(
+        int progress =
+                dashboardController.getValue(
+                        dashboardData,
+                        "inProgressRequests"
+                );
+
+        int pending =
+                dashboardController.getValue(
+                        dashboardData,
+                        "pendingRequests"
+                );
+
+        int cancelled =
+                dashboardController.getValue(
+                        dashboardData,
+                        "cancelledRequests"
+                );
+
+        int total =
+                completed +
+                progress +
+                pending +
+                cancelled;
+
+        if (total == 0) {
+
+            Circle outer =
+                    new Circle(
+                            75,
+                            Color.web(BORDER)
+                    );
+
+            Circle inner =
+                    new Circle(
+                            43,
+                            Color.web(SURFACE)
+                    );
+
+            VBox center =
+                    new VBox(1);
+
+            center.setAlignment(
+                    Pos.CENTER
+            );
+
+            Label text =
+                    new Label(
+                            "Total"
+                    );
+
+            text.setTextFill(
+                    Color.web(TEXT)
+            );
+
+            text.setFont(
+                    Font.font(
+                            "Arial",
+                            13
+                    )
+            );
+
+            Label value =
+                    new Label(
+                            "0"
+                    );
+
+            value.setTextFill(
+                    Color.web(HEADING)
+            );
+
+            value.setFont(
+                    Font.font(
+                            "Arial",
+                            FontWeight.BOLD,
+                            22
+                    )
+            );
+
+            center.getChildren().addAll(
+                    text,
+                    value
+            );
+
+            chart.getChildren().addAll(
+                    outer,
+                    inner,
+                    center
+            );
+
+            return chart;
+        }
+
+        double completedAngle =
+                ((double) completed / total) * 360;
+
+        double progressAngle =
+                ((double) progress / total) * 360;
+
+        double pendingAngle =
+                ((double) pending / total) * 360;
+
+        double cancelledAngle =
+                ((double) cancelled / total) * 360;
+
+        double startAngle =
+                90;
+
+        javafx.scene.shape.Arc completedArc =
+                new javafx.scene.shape.Arc(
+                        0,
+                        0,
+                        75,
+                        75,
+                        startAngle,
+                        -completedAngle
+                );
+
+        completedArc.setType(
                 javafx.scene.shape.ArcType.ROUND
         );
 
-        completed.setFill(
-                Color.web(BLUE)
-        );
-
-        javafx.scene.shape.Arc progress =
-                new javafx.scene.shape.Arc(
-                        115,
-                        105,
-                        75,
-                        75,
-                        -111.6,
-                        -72
-                );
-
-        progress.setType(
-                javafx.scene.shape.ArcType.ROUND
-        );
-
-        progress.setFill(
-                Color.web(GREEN)
-        );
-
-        javafx.scene.shape.Arc pending =
-                new javafx.scene.shape.Arc(
-                        115,
-                        105,
-                        75,
-                        75,
-                        -183.6,
-                        -57.6
-                );
-
-        pending.setType(
-                javafx.scene.shape.ArcType.ROUND
-        );
-
-        pending.setFill(
+        completedArc.setFill(
                 Color.web(ORANGE)
         );
 
-        javafx.scene.shape.Arc cancelled =
+        startAngle -=
+                completedAngle;
+
+        javafx.scene.shape.Arc progressArc =
                 new javafx.scene.shape.Arc(
-                        115,
-                        105,
+                        0,
+                        0,
                         75,
                         75,
-                        -241.2,
-                        -28.8
+                        startAngle,
+                        -progressAngle
                 );
 
-        cancelled.setType(
+        progressArc.setType(
                 javafx.scene.shape.ArcType.ROUND
         );
 
-        cancelled.setFill(
+        progressArc.setFill(
+                Color.web(GREEN)
+        );
+
+        startAngle -=
+                progressAngle;
+
+        javafx.scene.shape.Arc pendingArc =
+                new javafx.scene.shape.Arc(
+                        0,
+                        0,
+                        75,
+                        75,
+                        startAngle,
+                        -pendingAngle
+                );
+
+        pendingArc.setType(
+                javafx.scene.shape.ArcType.ROUND
+        );
+
+        pendingArc.setFill(
+                Color.web(BLUE)
+        );
+
+        startAngle -=
+                pendingAngle;
+
+        javafx.scene.shape.Arc cancelledArc =
+                new javafx.scene.shape.Arc(
+                        0,
+                        0,
+                        75,
+                        75,
+                        startAngle,
+                        -cancelledAngle
+                );
+
+        cancelledArc.setType(
+                javafx.scene.shape.ArcType.ROUND
+        );
+
+        cancelledArc.setFill(
                 Color.web(RED)
         );
 
-        javafx.scene.shape.Circle center =
-                new javafx.scene.shape.Circle(
-                        115,
-                        105,
+        Circle inner =
+                new Circle(
                         43,
                         Color.web(SURFACE)
                 );
 
-        VBox total =
+        VBox center =
                 new VBox(1);
 
-        total.setAlignment(
+        center.setAlignment(
                 Pos.CENTER
         );
 
-        Label totalText =
+        Label text =
                 new Label(
                         "Total"
                 );
 
-        totalText.setTextFill(
+        text.setTextFill(
                 Color.web(TEXT)
         );
 
-        totalText.setFont(
+        text.setFont(
                 Font.font(
                         "Arial",
                         13
                 )
         );
 
-        Label totalValue =
+        Label value =
                 new Label(
-                        "125"
+                        String.valueOf(total)
                 );
 
-        totalValue.setTextFill(
+        value.setTextFill(
                 Color.web(HEADING)
         );
 
-        totalValue.setFont(
+        value.setFont(
                 Font.font(
                         "Arial",
                         FontWeight.BOLD,
@@ -1650,99 +2472,21 @@ public class AdminDashboard {
                 )
         );
 
-        total.getChildren().addAll(
-                totalText,
-                totalValue
+        center.getChildren().addAll(
+                text,
+                value
         );
 
         chart.getChildren().addAll(
-                completed,
-                progress,
-                pending,
-                cancelled,
-                center,
-                total
+                completedArc,
+                progressArc,
+                pendingArc,
+                cancelledArc,
+                inner,
+                center
         );
 
         return chart;
-    }
-
-    // =========================================================
-    // LEGEND
-    // =========================================================
-
-    private HBox legendRow(
-            String color,
-            String name,
-            String count,
-            String percentage
-    ) {
-
-        HBox row =
-                new HBox(10);
-
-        row.setAlignment(
-                Pos.CENTER_LEFT
-        );
-
-        Circle dot =
-                new Circle(
-                        6,
-                        Color.web(color)
-                );
-
-        Label nameLabel =
-                new Label(
-                        name +
-                        " (" +
-                        count +
-                        ")"
-                );
-
-        nameLabel.setTextFill(
-                Color.web(HEADING)
-        );
-
-        nameLabel.setFont(
-                Font.font(
-                        "Arial",
-                        14
-                )
-        );
-
-        Region spacer =
-                new Region();
-
-        HBox.setHgrow(
-                spacer,
-                Priority.ALWAYS
-        );
-
-        Label percent =
-                new Label(
-                        percentage
-                );
-
-        percent.setTextFill(
-                Color.web(HEADING)
-        );
-
-        percent.setFont(
-                Font.font(
-                        "Arial",
-                        FontWeight.BOLD,
-                        14
-                )
-        );
-
-        row.getChildren().addAll(
-                dot,
-                nameLabel,
-                spacer,
-                percent
-        );
-
-        return row;
     }
 
     // =========================================================
@@ -1754,6 +2498,22 @@ public class AdminDashboard {
         VBox card =
                 createCard();
 
+        int totalSOS =
+                dashboardController.getValue(
+                        dashboardData,
+                        "sosRequests"
+                );
+
+        int activeSOS =
+                dashboardController.getValue(
+                        dashboardData,
+                        "activeSOS"
+                );
+
+        // =====================================================
+        // HEADER
+        // =====================================================
+
         HBox titleRow =
                 new HBox();
 
@@ -1763,7 +2523,7 @@ public class AdminDashboard {
 
         Label title =
                 sectionTitle(
-                        "SOS Requests"
+                        "SOS Emergency Requests"
                 );
 
         Region spacer =
@@ -1774,170 +2534,46 @@ public class AdminDashboard {
                 Priority.ALWAYS
         );
 
-        Button viewAll =
-                new Button(
-                        "View All"
+        Label emergency =
+                new Label(
+                        "● Emergency"
                 );
 
-        viewAll.setTextFill(
-                Color.WHITE
+        emergency.setTextFill(
+                Color.web(RED)
         );
 
-        viewAll.setFont(
+        emergency.setFont(
                 Font.font(
                         "Arial",
                         FontWeight.BOLD,
                         14
                 )
-        );
-
-        viewAll.setPrefHeight(
-                36
-        );
-
-        viewAll.setPadding(
-                new Insets(
-                        0,
-                        14,
-                        0,
-                        14
-                )
-        );
-
-        viewAll.setStyle(
-                "-fx-background-color: " +
-                BLUE +
-                ";" +
-                "-fx-background-radius: 7;"
         );
 
         titleRow.getChildren().addAll(
                 title,
                 spacer,
-                viewAll
+                emergency
         );
 
-        VBox list =
-                new VBox();
+        // =====================================================
+        // TOTAL
+        // =====================================================
 
-        list.getChildren().addAll(
-
-                sosRow(
-                        "Rahul Sharma",
-                        "Pune, Maharashtra",
-                        "01:35 PM"
-                ),
-
-                sosRow(
-                        "Akash Patil",
-                        "Mumbai, Maharashtra",
-                        "01:20 PM"
-                ),
-
-                sosRow(
-                        "Rohit S. N.",
-                        "Nagpur, Maharashtra",
-                        "01:05 PM"
-                ),
-
-                sosRow(
-                        "Suresh Jadhav",
-                        "Nashik, Maharashtra",
-                        "12:50 PM"
-                )
-        );
-
-        VBox.setVgrow(
-                list,
-                Priority.ALWAYS
-        );
-
-        card.getChildren().addAll(
-                titleRow,
-                list
-        );
-
-        return card;
-    }
-
-    // =========================================================
-    // SOS ROW
-    // =========================================================
-
-    private HBox sosRow(
-            String name,
-            String location,
-            String time
-    ) {
-
-        HBox row =
-                new HBox(12);
-
-        row.setAlignment(
-                Pos.CENTER_LEFT
-        );
-
-        row.setPadding(
-                new Insets(
-                        12,
-                        5,
-                        12,
-                        5
-                )
-        );
-
-        row.setStyle(
-                "-fx-border-color: " +
-                BORDER +
-                ";" +
-                "-fx-border-width: 0 0 1 0;"
-        );
-
-        Circle circle =
-                new Circle(
-                        19,
-                        Color.web(
-                                RED +
-                                "20"
-                        )
-                );
-
-        Label sos =
-                new Label(
-                        "SOS"
-                );
-
-        sos.setTextFill(
-                Color.web(RED)
-        );
-
-        sos.setFont(
-                Font.font(
-                        "Arial",
-                        FontWeight.BOLD,
-                        10
-                )
-        );
-
-        StackPane badge =
-                new StackPane(
-                        circle,
-                        sos
-                );
-
-        VBox info =
+        VBox totalBox =
                 new VBox(3);
 
-        Label nameLabel =
+        Label totalTitle =
                 new Label(
-                        name
+                        "Total SOS Requests"
                 );
 
-        nameLabel.setTextFill(
-                Color.web(HEADING)
+        totalTitle.setTextFill(
+                Color.web(TEXT)
         );
 
-        nameLabel.setFont(
+        totalTitle.setFont(
                 Font.font(
                         "Arial",
                         FontWeight.BOLD,
@@ -1945,52 +2581,156 @@ public class AdminDashboard {
                 )
         );
 
-        Label locationLabel =
+        Label totalValue =
                 new Label(
-                        location
+                        String.valueOf(
+                                totalSOS
+                        )
                 );
 
-        locationLabel.setTextFill(
-                Color.web(TEXT)
-        );
-
-        locationLabel.setFont(
-                Font.font(
-                        "Arial",
-                        13
-                )
-        );
-
-        info.getChildren().addAll(
-                nameLabel,
-                locationLabel
-        );
-
-        Region spacer =
-                new Region();
-
-        HBox.setHgrow(
-                spacer,
-                Priority.ALWAYS
-        );
-
-        VBox timeBox =
-                new VBox(3);
-
-        timeBox.setAlignment(
-                Pos.CENTER_RIGHT
-        );
-
-        Label timeLabel =
-                new Label(
-                        time
-                );
-
-        timeLabel.setTextFill(
+        totalValue.setTextFill(
                 Color.web(HEADING)
         );
 
-        timeLabel.setFont(
+        totalValue.setFont(
+                Font.font(
+                        "Arial",
+                        FontWeight.BOLD,
+                        30
+                )
+        );
+
+        totalBox.getChildren().addAll(
+                totalTitle,
+                totalValue
+        );
+
+        // =====================================================
+        // ACTIVE SOS
+        // =====================================================
+
+        VBox activeBox =
+                new VBox(3);
+
+        Label activeTitle =
+                new Label(
+                        "Active SOS"
+                );
+
+        activeTitle.setTextFill(
+                Color.web(TEXT)
+        );
+
+        activeTitle.setFont(
+                Font.font(
+                        "Arial",
+                        FontWeight.BOLD,
+                        15
+                )
+        );
+
+        Label activeValue =
+                new Label(
+                        String.valueOf(
+                                activeSOS
+                        )
+                );
+
+        activeValue.setTextFill(
+                Color.web(
+                        activeSOS > 0
+                                ? RED
+                                : GREEN
+                )
+        );
+
+        activeValue.setFont(
+                Font.font(
+                        "Arial",
+                        FontWeight.BOLD,
+                        30
+                )
+        );
+
+        activeBox.getChildren().addAll(
+                activeTitle,
+                activeValue
+        );
+
+        // =====================================================
+        // STATUS MESSAGE
+        // =====================================================
+
+        VBox infoBox =
+                new VBox(6);
+
+        infoBox.setAlignment(
+                Pos.CENTER
+        );
+
+        Label statusIcon =
+                new Label(
+                        activeSOS > 0
+                                ? "!"
+                                : "✓"
+                );
+
+        statusIcon.setTextFill(
+                Color.WHITE
+        );
+
+        statusIcon.setFont(
+                Font.font(
+                        "Arial",
+                        FontWeight.BOLD,
+                        22
+                )
+        );
+
+        statusIcon.setAlignment(
+                Pos.CENTER
+        );
+
+        statusIcon.setPrefSize(
+                44,
+                44
+        );
+
+        statusIcon.setStyle(
+                "-fx-background-color: " +
+                (
+                        activeSOS > 0
+                                ? RED
+                                : GREEN
+                ) +
+                ";" +
+                "-fx-background-radius: 50%;"
+        );
+
+        Label message =
+                new Label(
+                        activeSOS > 0
+                                ? "Emergency requests need attention."
+                                : "No active emergency requests."
+                );
+
+        message.setWrapText(
+                true
+        );
+
+        message.setTextAlignment(
+                javafx.scene.text.TextAlignment.CENTER
+        );
+
+        message.setTextFill(
+                Color.web(
+                        activeSOS > 0
+                                ? RED
+                                : TEXT
+                )
+        );
+
+        message.setFont(
                 Font.font(
                         "Arial",
                         FontWeight.BOLD,
@@ -1998,36 +2738,98 @@ public class AdminDashboard {
                 )
         );
 
-        Label active =
-                new Label(
-                        "Active"
+        infoBox.getChildren().addAll(
+                statusIcon,
+                message
+        );
+
+        // =====================================================
+        // BUTTON
+        // =====================================================
+
+        Button openButton =
+                new Button(
+                        "Open SOS Requests  →"
                 );
 
-        active.setTextFill(
-                Color.web(RED)
+        stylePrimaryButton(
+                openButton,
+                RED,
+                RED_HOVER
         );
 
-        active.setFont(
-                Font.font(
-                        "Arial",
-                        FontWeight.BOLD,
-                        13
-                )
+        addButtonHover(
+                openButton,
+                RED,
+                RED_HOVER
         );
 
-        timeBox.getChildren().addAll(
-                timeLabel,
-                active
+        openButton.setOnAction(
+                event ->
+                        showSOSRequests()
         );
 
-        row.getChildren().addAll(
-                badge,
-                info,
-                spacer,
-                timeBox
+        // =====================================================
+        // CONTENT
+        // =====================================================
+
+        HBox content =
+                new HBox(20);
+
+        content.setAlignment(
+                Pos.CENTER
         );
 
-        return row;
+        content.getChildren().addAll(
+                totalBox,
+                activeBox,
+                infoBox,
+                openButton
+        );
+
+        HBox.setHgrow(
+                totalBox,
+                Priority.ALWAYS
+        );
+
+        HBox.setHgrow(
+                activeBox,
+                Priority.ALWAYS
+        );
+
+        HBox.setHgrow(
+                infoBox,
+                Priority.ALWAYS
+        );
+
+        HBox.setHgrow(
+                openButton,
+                Priority.ALWAYS
+        );
+
+        card.getChildren().addAll(
+                titleRow,
+                content
+        );
+
+        // =====================================================
+        // ACTIVE SOS HIGHLIGHT
+        // =====================================================
+
+        if (
+                activeSOS > 0
+        ) {
+
+            card.setStyle(
+                    "-fx-background-color: #FFF7F7;" +
+                    "-fx-border-color: #FCA5A5;" +
+                    "-fx-border-width: 1.5;" +
+                    "-fx-border-radius: 13;" +
+                    "-fx-background-radius: 13;"
+            );
+        }
+
+        return card;
     }
 
     // =========================================================
@@ -2061,30 +2863,24 @@ public class AdminDashboard {
 
         Button view =
                 new Button(
-                        "View All"
+                        "View All  →"
                 );
 
-        view.setTextFill(
-                Color.WHITE
+        stylePrimaryButton(
+                view,
+                ORANGE,
+                ORANGE_HOVER
         );
 
-        view.setFont(
-                Font.font(
-                        "Arial",
-                        FontWeight.BOLD,
-                        14
-                )
+        addButtonHover(
+                view,
+                ORANGE,
+                ORANGE_HOVER
         );
 
-        view.setPrefHeight(
-                36
-        );
-
-        view.setStyle(
-                "-fx-background-color: " +
-                BLUE +
-                ";" +
-                "-fx-background-radius: 7;"
+        view.setOnAction(
+                event ->
+                        showServiceRequests()
         );
 
         header.getChildren().addAll(
@@ -2093,118 +2889,248 @@ public class AdminDashboard {
                 view
         );
 
-        TableView<String[]> table =
-                new TableView<>();
+        // =====================================================
+        // REQUEST LIST
+        // =====================================================
 
-        table.setColumnResizePolicy(
-                TableView.CONSTRAINED_RESIZE_POLICY
-        );
+        VBox list = new VBox(10);
 
-        String[] headers = {
-                "Request ID",
-                "Customer",
-                "Vehicle",
-                "Mechanic",
-                "Status",
-                "Date"
-        };
+        list.getChildren().addAll(
 
-        for (
-                int i = 0;
-                i < headers.length;
-                i++
-        ) {
-
-            final int index = i;
-
-            TableColumn<String[], String> column =
-                    new TableColumn<>(
-                            headers[i]
-                    );
-
-            column.setCellValueFactory(
-                    data ->
-                            new javafx.beans.property
-                                    .SimpleStringProperty(
-                                            data.getValue()[index]
-                                    )
-            );
-
-            table.getColumns().add(
-                    column
-            );
-        }
-
-        table.getItems().addAll(
-
-                new String[]{
+                recentRequestRow(
                         "SR1256",
                         "Rahul Sharma",
                         "MH12AB1234",
-                        "Ganesh Pawar",
                         "Pending",
-                        "12 Aug 2026"
-                },
+                        BLUE
+                ),
 
-                new String[]{
+                recentRequestRow(
                         "SR1255",
                         "Akash Patil",
                         "MH14CD5678",
-                        "Rohit S. N.",
                         "In Progress",
-                        "12 Aug 2026"
-                },
+                        GREEN
+                ),
 
-                new String[]{
+                recentRequestRow(
                         "SR1254",
                         "Pooja Mehta",
                         "MH12EF9012",
-                        "Sameer Khan",
                         "Completed",
-                        "12 Aug 2026"
-                },
+                        ORANGE
+                ),
 
-                new String[]{
+                recentRequestRow(
                         "SR1253",
                         "Vikram Joshi",
                         "MH15GH3456",
-                        "Amol Kamble",
                         "Pending",
-                        "11 Aug 2026"
-                }
-        );
-
-        table.setPrefHeight(
-                250
-        );
-
-        table.setFixedCellSize(
-                46
-        );
-
-        table.setStyle(
-                "-fx-background-color: " +
-                SURFACE +
-                ";" +
-                "-fx-control-inner-background: " +
-                SURFACE +
-                ";" +
-                "-fx-border-color: " +
-                BORDER +
-                ";"
-        );
-
-        VBox.setVgrow(
-                table,
-                Priority.ALWAYS
+                        BLUE
+                )
         );
 
         card.getChildren().addAll(
                 header,
-                table
+                list
         );
 
         return card;
+    }
+
+    // =========================================================
+    // RECENT REQUEST ROW
+    // =========================================================
+
+    private HBox recentRequestRow(
+            String requestId,
+            String customer,
+            String vehicle,
+            String status,
+            String statusColor
+    ) {
+
+        HBox row =
+                new HBox(12);
+
+        row.setAlignment(
+                Pos.CENTER_LEFT
+        );
+
+        row.setPadding(
+                new Insets(
+                        11,
+                        10,
+                        11,
+                        10
+                )
+        );
+
+        row.setStyle(
+                "-fx-background-color: " +
+                SECONDARY +
+                ";" +
+                "-fx-background-radius: 9;" +
+                "-fx-cursor: hand;"
+        );
+
+        VBox idBox =
+                new VBox(2);
+
+        Label id =
+                new Label(
+                        requestId
+                );
+
+        id.setTextFill(
+                Color.web(HEADING)
+        );
+
+        id.setFont(
+                Font.font(
+                        "Arial",
+                        FontWeight.BOLD,
+                        15
+                )
+        );
+
+        Label customerLabel =
+                new Label(
+                        customer
+                );
+
+        customerLabel.setTextFill(
+                Color.web(TEXT)
+        );
+
+        customerLabel.setFont(
+                Font.font(
+                        "Arial",
+                        13
+                )
+        );
+
+        idBox.getChildren().addAll(
+                id,
+                customerLabel
+        );
+
+        VBox vehicleBox =
+                new VBox(2);
+
+        Label vehicleTitle =
+                new Label(
+                        "Vehicle"
+                );
+
+        vehicleTitle.setTextFill(
+                Color.web(TEXT)
+        );
+
+        vehicleTitle.setFont(
+                Font.font(
+                        "Arial",
+                        12
+                )
+        );
+
+        Label vehicleLabel =
+                new Label(
+                        vehicle
+                );
+
+        vehicleLabel.setTextFill(
+                Color.web(HEADING)
+        );
+
+        vehicleLabel.setFont(
+                Font.font(
+                        "Arial",
+                        FontWeight.BOLD,
+                        13
+                )
+        );
+
+        vehicleBox.getChildren().addAll(
+                vehicleTitle,
+                vehicleLabel
+        );
+
+        Region spacer =
+                new Region();
+
+        HBox.setHgrow(
+                spacer,
+                Priority.ALWAYS
+        );
+
+        Label statusLabel =
+                new Label(
+                        status
+                );
+
+        statusLabel.setTextFill(
+                Color.WHITE
+        );
+
+        statusLabel.setFont(
+                Font.font(
+                        "Arial",
+                        FontWeight.BOLD,
+                        12
+                )
+        );
+
+        statusLabel.setPadding(
+                new Insets(
+                        6,
+                        10,
+                        6,
+                        10
+                )
+        );
+
+        statusLabel.setStyle(
+                "-fx-background-color: " +
+                statusColor +
+                ";" +
+                "-fx-background-radius: 12;"
+        );
+
+        row.getChildren().addAll(
+                idBox,
+                vehicleBox,
+                spacer,
+                statusLabel
+        );
+
+        row.setOnMouseEntered(
+                event ->
+                        row.setStyle(
+                                "-fx-background-color: " +
+                                SURFACE +
+                                ";" +
+                                "-fx-background-radius: 9;" +
+                                "-fx-border-color: " +
+                                BORDER +
+                                ";" +
+                                "-fx-border-radius: 9;" +
+                                "-fx-cursor: hand;"
+                        )
+        );
+
+        row.setOnMouseExited(
+                event ->
+                        row.setStyle(
+                                "-fx-background-color: " +
+                                SECONDARY +
+                                ";" +
+                                "-fx-background-radius: 9;" +
+                                "-fx-cursor: hand;"
+                        )
+        );
+
+        return row;
     }
 
     // =========================================================
@@ -2212,189 +3138,128 @@ public class AdminDashboard {
     // =========================================================
 
     private VBox createQuickActions() {
+        VBox card = createCard();
 
-        VBox card =
-                createCard();
+        HBox header = new HBox();
+        header.setAlignment(Pos.CENTER_LEFT);
 
-        Label title =
-                sectionTitle(
-                        "Quick Actions"
-                );
+        Label title = sectionTitle("Quick Actions");
 
-        GridPane grid =
-                new GridPane();
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        grid.setHgap(
-                11
-        );
+        Label hint = new Label("Common admin tasks");
+        hint.setTextFill(Color.web(TEXT));
+        hint.setFont(Font.font("Arial", 13));
 
-        grid.setVgap(
-                11
-        );
+        header.getChildren().addAll(title, spacer, hint);
 
-        grid.add(
-                quickAction(
-                        "♙",
-                        "Add Customer",
-                        BLUE
-                ),
-                0,
-                0
-        );
+        GridPane grid = new GridPane();
+        grid.setHgap(14);
+        grid.setVgap(14);
+        grid.setMaxWidth(Double.MAX_VALUE);
 
-        grid.add(
-                quickAction(
-                        "⚒",
-                        "Add Mechanic",
-                        GREEN
-                ),
-                1,
-                0
-        );
+        VBox addCustomer = quickAction("♙", "Add Customer", ORANGE);
+        VBox addMechanic = quickAction("⚒", "Add Mechanic", GREEN);
+        VBox addVehicle = quickAction("▰", "Add Vehicle", BLUE);
+        VBox newService = quickAction("▤", "Service Requests", ORANGE);
+        VBox newSOS = quickAction("SOS", "SOS Requests", RED);
+        VBox notification = quickAction("♢", "Notifications", GREEN);
 
-        grid.add(
-                quickAction(
-                        "▰",
-                        "Add Vehicle",
-                        ORANGE
-                ),
-                2,
-                0
-        );
+        addCustomer.setOnMouseClicked(event -> showCustomers());
+        addMechanic.setOnMouseClicked(event -> showMechanics());
+        addVehicle.setOnMouseClicked(event -> showVehicles());
+        newService.setOnMouseClicked(event -> showServiceRequests());
+        newSOS.setOnMouseClicked(event -> showSOSRequests());
+        notification.setOnMouseClicked(event -> showNotifications());
 
-        grid.add(
-                quickAction(
-                        "▤",
-                        "New Service",
-                        BLUE
-                ),
-                0,
-                1
-        );
+        ColumnConstraints c1 = new ColumnConstraints();
+        ColumnConstraints c2 = new ColumnConstraints();
+        ColumnConstraints c3 = new ColumnConstraints();
 
-        grid.add(
-                quickAction(
-                        "SOS",
-                        "New SOS",
-                        RED
-                ),
-                1,
-                1
-        );
+        c1.setPercentWidth(33.33);
+        c2.setPercentWidth(33.33);
+        c3.setPercentWidth(33.34);
 
-        grid.add(
-                quickAction(
-                        "♢",
-                        "Notification",
-                        GREEN
-                ),
-                2,
-                1
-        );
+        c1.setHgrow(Priority.ALWAYS);
+        c2.setHgrow(Priority.ALWAYS);
+        c3.setHgrow(Priority.ALWAYS);
 
-        card.getChildren().addAll(
-                title,
-                grid
-        );
+        grid.getColumnConstraints().addAll(c1, c2, c3);
+
+        grid.add(addCustomer, 0, 0);
+        grid.add(addMechanic, 1, 0);
+        grid.add(addVehicle, 2, 0);
+        grid.add(newService, 0, 1);
+        grid.add(newSOS, 1, 1);
+        grid.add(notification, 2, 1);
+
+        card.getChildren().addAll(header, grid);
+        VBox.setVgrow(grid, Priority.ALWAYS);
 
         return card;
     }
 
     // =========================================================
-    // QUICK ACTION BOX
+    // QUICK ACTION
     // =========================================================
 
-    private VBox quickAction(
-            String icon,
-            String text,
-            String color
-    ) {
-
-        VBox box =
-                new VBox(9);
-
-        box.setAlignment(
-                Pos.CENTER
-        );
-
-        box.setPrefSize(
-                120,
-                100
-        );
+    private VBox quickAction(String icon, String text, String color) {
+        VBox box = new VBox(10);
+        box.setAlignment(Pos.CENTER);
+        box.setMaxWidth(Double.MAX_VALUE);
+        box.setPrefHeight(122);
+        box.setMinHeight(112);
+        box.setPadding(new Insets(16));
 
         box.setStyle(
-                "-fx-background-color: " +
-                SECONDARY +
-                ";" +
-                "-fx-border-color: " +
-                BORDER +
-                ";" +
-                "-fx-border-radius: 9;" +
-                "-fx-background-radius: 9;"
+                "-fx-background-color: " + SECONDARY + ";" +
+                "-fx-border-color: " + BORDER + ";" +
+                "-fx-border-radius: 12;" +
+                "-fx-background-radius: 12;" +
+                "-fx-cursor: hand;"
         );
 
-        box.setOnMouseEntered(
-                event ->
-                        box.setStyle(
-                                "-fx-background-color: " +
-                                SURFACE +
-                                ";" +
-                                "-fx-border-color: " +
-                                color +
-                                ";" +
-                                "-fx-border-radius: 9;" +
-                                "-fx-background-radius: 9;"
-                        )
-        );
+        Label iconLabel = new Label(icon);
+        iconLabel.setTextFill(Color.web(color));
+        iconLabel.setFont(Font.font("Arial", FontWeight.BOLD, 28));
 
-        box.setOnMouseExited(
-                event ->
-                        box.setStyle(
-                                "-fx-background-color: " +
-                                SECONDARY +
-                                ";" +
-                                "-fx-border-color: " +
-                                BORDER +
-                                ";" +
-                                "-fx-border-radius: 9;" +
-                                "-fx-background-radius: 9;"
-                        )
-        );
+        Label textLabel = new Label(text);
+        textLabel.setTextFill(Color.web(HEADING));
+        textLabel.setFont(Font.font("Arial", FontWeight.BOLD, 15));
+        textLabel.setWrapText(true);
+        textLabel.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
 
-        Label iconLabel =
-                new Label(icon);
+        Label arrow = new Label("→");
+        arrow.setTextFill(Color.web(TEXT));
+        arrow.setFont(Font.font("Arial", FontWeight.BOLD, 16));
 
-        iconLabel.setTextFill(
-                Color.web(color)
-        );
+        box.getChildren().addAll(iconLabel, textLabel, arrow);
 
-        iconLabel.setFont(
-                Font.font(
-                        "Arial",
-                        FontWeight.BOLD,
-                        24
-                )
-        );
+        box.setOnMouseEntered(event -> {
+            box.setStyle(
+                    "-fx-background-color: " + SURFACE + ";" +
+                    "-fx-border-color: " + color + ";" +
+                    "-fx-border-width: 1.5;" +
+                    "-fx-border-radius: 12;" +
+                    "-fx-background-radius: 12;" +
+                    "-fx-cursor: hand;"
+            );
+            box.setScaleX(1.03);
+            box.setScaleY(1.03);
+        });
 
-        Label textLabel =
-                new Label(text);
-
-        textLabel.setTextFill(
-                Color.web(HEADING)
-        );
-
-        textLabel.setFont(
-                Font.font(
-                        "Arial",
-                        FontWeight.BOLD,
-                        14
-                )
-        );
-
-        box.getChildren().addAll(
-                iconLabel,
-                textLabel
-        );
+        box.setOnMouseExited(event -> {
+            box.setStyle(
+                    "-fx-background-color: " + SECONDARY + ";" +
+                    "-fx-border-color: " + BORDER + ";" +
+                    "-fx-border-radius: 12;" +
+                    "-fx-background-radius: 12;" +
+                    "-fx-cursor: hand;"
+            );
+            box.setScaleX(1.0);
+            box.setScaleY(1.0);
+        });
 
         return box;
     }
@@ -2455,6 +3320,103 @@ public class AdminDashboard {
     }
 
     // =========================================================
+    // PRIMARY BUTTON STYLE
+    // =========================================================
+
+    private void stylePrimaryButton(
+            Button button,
+            String normalColor,
+            String hoverColor
+    ) {
+
+        button.setTextFill(
+                Color.WHITE
+        );
+
+        button.setFont(
+                Font.font(
+                        "Arial",
+                        FontWeight.BOLD,
+                        14
+                )
+        );
+
+        button.setPrefHeight(
+                40
+        );
+
+        button.setPadding(
+                new Insets(
+                        0,
+                        16,
+                        0,
+                        16
+                )
+        );
+
+        button.setStyle(
+                "-fx-background-color: " +
+                normalColor +
+                ";" +
+                "-fx-background-radius: 8;" +
+                "-fx-cursor: hand;"
+        );
+    }
+
+    // =========================================================
+    // BUTTON HOVER
+    // =========================================================
+
+    private void addButtonHover(
+            Button button,
+            String normalColor,
+            String hoverColor
+    ) {
+
+        button.setOnMouseEntered(
+                event -> {
+
+                    button.setStyle(
+                            "-fx-background-color: " +
+                            hoverColor +
+                            ";" +
+                            "-fx-background-radius: 8;" +
+                            "-fx-cursor: hand;"
+                    );
+
+                    button.setScaleX(
+                            1.03
+                    );
+
+                    button.setScaleY(
+                            1.03
+                    );
+                }
+        );
+
+        button.setOnMouseExited(
+                event -> {
+
+                    button.setStyle(
+                            "-fx-background-color: " +
+                            normalColor +
+                            ";" +
+                            "-fx-background-radius: 8;" +
+                            "-fx-cursor: hand;"
+                    );
+
+                    button.setScaleX(
+                            1.0
+                    );
+
+                    button.setScaleY(
+                            1.0
+                    );
+                }
+        );
+    }
+
+    // =========================================================
     // CUSTOMER PAGE
     // =========================================================
 
@@ -2470,205 +3432,5 @@ public class AdminDashboard {
         contentArea.getChildren().setAll(
                 page.getView()
         );
-    }
-
-    // =========================================================
-    // PLACEHOLDER PAGE
-    // =========================================================
-
-    private void showPlaceholder(
-            String title,
-            String subtitle
-    ) {
-
-        Button activeButton =
-                getButtonForTitle(
-                        title
-                );
-
-        if (
-                activeButton != null
-        ) {
-
-            setActive(
-                    activeButton
-            );
-        }
-
-        VBox page =
-                new VBox(14);
-
-        page.setAlignment(
-                Pos.TOP_LEFT
-        );
-
-        page.setPadding(
-                new Insets(
-                        32
-                )
-        );
-
-        page.setStyle(
-                "-fx-background-color: " +
-                BG +
-                ";"
-        );
-
-        Label heading =
-                new Label(title);
-
-        heading.setTextFill(
-                Color.web(HEADING)
-        );
-
-        heading.setFont(
-                Font.font(
-                        "Arial",
-                        FontWeight.BOLD,
-                        32
-                )
-        );
-
-        Label description =
-                new Label(subtitle);
-
-        description.setTextFill(
-                Color.web(TEXT)
-        );
-
-        description.setFont(
-                Font.font(
-                        "Arial",
-                        16
-                )
-        );
-
-        VBox card =
-                createCard();
-
-        card.setMaxWidth(
-                Double.MAX_VALUE
-        );
-
-        Label message =
-                new Label(
-                        "This section is ready for integration."
-                );
-
-        message.setTextFill(
-                Color.web(TEXT)
-        );
-
-        message.setFont(
-                Font.font(
-                        "Arial",
-                        16
-                )
-        );
-
-        card.getChildren().add(
-                message
-        );
-
-        page.getChildren().addAll(
-                heading,
-                description,
-                card
-        );
-
-        contentArea.getChildren().setAll(
-                page
-        );
-    }
-
-    // =========================================================
-    // BUTTON MAPPING
-    // =========================================================
-
-    private Button getButtonForTitle(
-            String title
-    ) {
-
-        if (
-                title.equals(
-                        "Mechanic Management"
-                )
-        ) {
-            return mechanicsButton;
-        }
-
-        if (
-                title.equals(
-                        "Vehicle Management"
-                )
-        ) {
-            return vehiclesButton;
-        }
-
-        if (
-                title.equals(
-                        "Service Requests"
-                )
-        ) {
-            return serviceRequestButton;
-        }
-
-        if (
-                title.equals(
-                        "SOS Requests"
-                )
-        ) {
-            return sosButton;
-        }
-
-        if (
-                title.equals(
-                        "Services"
-                )
-        ) {
-            return servicesButton;
-        }
-
-        if (
-                title.equals(
-                        "Reviews"
-                )
-        ) {
-            return reviewsButton;
-        }
-
-        if (
-                title.equals(
-                        "Complaints"
-                )
-        ) {
-            return complaintsButton;
-        }
-
-        if (
-                title.equals(
-                        "Notifications"
-                )
-        ) {
-            return notificationsButton;
-        }
-
-        if (
-                title.equals(
-                        "Reports"
-                )
-        ) {
-            return reportsButton;
-        }
-
-        if (
-                title.equals(
-                        "Settings"
-                )
-        ) {
-            return settingsButton;
-        }
-
-        return null;
     }
 }
