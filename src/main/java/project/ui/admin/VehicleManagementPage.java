@@ -4,10 +4,11 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Cursor;
 import javafx.scene.control.*;
-import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 
@@ -17,6 +18,8 @@ import project.controller.admin.VehicleController;
 import project.firebase.FirebaseConfig;
 import project.model.Vehicle;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 public class VehicleManagementPage extends AdminSectionPage {
@@ -47,10 +50,19 @@ public class VehicleManagementPage extends AdminSectionPage {
 
     private VehicleController controller;
 
-    private TableView<Vehicle> vehicleTable;
-
     private final ObservableList<Vehicle> vehicleList =
             FXCollections.observableArrayList();
+
+    private final List<Vehicle> allVehicles =
+            new ArrayList<>();
+
+    private VBox vehicleCards;
+
+    private TextField searchField;
+    private ComboBox<String> statusFilter;
+    private ComboBox<String> sortFilter;
+
+    private Label resultCountLabel;
 
     private Label totalLabel;
     private Label activeLabel;
@@ -63,23 +75,9 @@ public class VehicleManagementPage extends AdminSectionPage {
     @Override
     public VBox getView() {
 
-        VBox root =
-                new VBox(22);
-
-        root.setPadding(
-                new Insets(
-                        30,
-                        32,
-                        32,
-                        32
-                )
-        );
-
-        root.setStyle(
-                "-fx-background-color: " +
-                BG +
-                ";"
-        );
+        VBox root = new VBox(22);
+        root.setPadding(new Insets(30, 32, 32, 32));
+        root.setStyle("-fx-background-color: " + BG + ";");
 
         try {
 
@@ -87,9 +85,7 @@ public class VehicleManagementPage extends AdminSectionPage {
                     FirebaseConfig.getFirestore();
 
             controller =
-                    new VehicleController(
-                            firestore
-                    );
+                    new VehicleController(firestore);
 
         } catch (Exception e) {
 
@@ -100,27 +96,20 @@ public class VehicleManagementPage extends AdminSectionPage {
             );
         }
 
-        VBox header =
-                createHeader();
-
-        HBox statistics =
-                createStatistics();
-
-        HBox toolbar =
-                createToolbar();
-
-        VBox tableCard =
-                createTableCard();
+        VBox header = createHeader();
+        HBox statistics = createStatistics();
+        HBox toolbar = createToolbar();
+        VBox recordsCard = createRecordsCard();
 
         root.getChildren().addAll(
                 header,
                 statistics,
                 toolbar,
-                tableCard
+                recordsCard
         );
 
         VBox.setVgrow(
-                tableCard,
+                recordsCard,
                 Priority.ALWAYS
         );
 
@@ -135,18 +124,10 @@ public class VehicleManagementPage extends AdminSectionPage {
 
     private VBox createHeader() {
 
-        VBox header =
-                new VBox(7);
+        VBox header = new VBox(7);
 
-        Label title =
-                new Label(
-                        "Vehicle Management"
-                );
-
-        title.setTextFill(
-                Color.web(HEADING)
-        );
-
+        Label title = new Label("Vehicle Management");
+        title.setTextFill(Color.web(HEADING));
         title.setFont(
                 Font.font(
                         "Arial",
@@ -155,21 +136,11 @@ public class VehicleManagementPage extends AdminSectionPage {
                 )
         );
 
-        Label subtitle =
-                new Label(
-                        "Manage customer vehicles registered with RoadGuardian."
-                );
-
-        subtitle.setTextFill(
-                Color.web(TEXT)
+        Label subtitle = new Label(
+                "Manage and monitor customer vehicles registered in RoadGuardian."
         );
-
-        subtitle.setFont(
-                Font.font(
-                        "Arial",
-                        16
-                )
-        );
+        subtitle.setTextFill(Color.web(TEXT));
+        subtitle.setFont(Font.font("Arial", 16));
 
         header.getChildren().addAll(
                 title,
@@ -185,65 +156,39 @@ public class VehicleManagementPage extends AdminSectionPage {
 
     private HBox createStatistics() {
 
-        HBox box =
-                new HBox(16);
+        HBox box = new HBox(16);
 
-        totalLabel =
-                createValueLabel(
-                        BLUE
-                );
+        totalLabel = createValueLabel(BLUE);
+        activeLabel = createValueLabel(GREEN);
+        inactiveLabel = createValueLabel(RED);
 
-        activeLabel =
-                createValueLabel(
-                        GREEN
-                );
-
-        inactiveLabel =
-                createValueLabel(
-                        RED
-                );
-
-        VBox total =
-                createStatCard(
-                        "Total Vehicles",
-                        "All registered vehicles",
-                        totalLabel,
-                        BLUE,
-                        "TOTAL"
-                );
-
-        VBox active =
-                createStatCard(
-                        "Active Vehicles",
-                        "Currently registered",
-                        activeLabel,
-                        GREEN,
-                        "ACTIVE"
-                );
-
-        VBox inactive =
-                createStatCard(
-                        "Inactive Vehicles",
-                        "Currently unavailable",
-                        inactiveLabel,
-                        RED,
-                        "INACTIVE"
-                );
-
-        HBox.setHgrow(
-                total,
-                Priority.ALWAYS
+        VBox total = createStatCard(
+                "Total Vehicles",
+                "All registered vehicles",
+                totalLabel,
+                BLUE,
+                "TOTAL"
         );
 
-        HBox.setHgrow(
-                active,
-                Priority.ALWAYS
+        VBox active = createStatCard(
+                "Active Vehicles",
+                "Currently registered",
+                activeLabel,
+                GREEN,
+                "ACTIVE"
         );
 
-        HBox.setHgrow(
-                inactive,
-                Priority.ALWAYS
+        VBox inactive = createStatCard(
+                "Inactive Vehicles",
+                "Currently unavailable",
+                inactiveLabel,
+                RED,
+                "INACTIVE"
         );
+
+        HBox.setHgrow(total, Priority.ALWAYS);
+        HBox.setHgrow(active, Priority.ALWAYS);
+        HBox.setHgrow(inactive, Priority.ALWAYS);
 
         box.getChildren().addAll(
                 total,
@@ -254,17 +199,10 @@ public class VehicleManagementPage extends AdminSectionPage {
         return box;
     }
 
-    private Label createValueLabel(
-            String color
-    ) {
+    private Label createValueLabel(String color) {
 
-        Label label =
-                new Label("0");
-
-        label.setTextFill(
-                Color.web(color)
-        );
-
+        Label label = new Label("0");
+        label.setTextFill(Color.web(color));
         label.setFont(
                 Font.font(
                         "Arial",
@@ -284,47 +222,35 @@ public class VehicleManagementPage extends AdminSectionPage {
             String tagText
     ) {
 
-        VBox card =
-                new VBox(9);
+        VBox card = new VBox(9);
 
         card.setPadding(
-                new Insets(
-                        20,
-                        22,
-                        18,
-                        22
-                )
+                new Insets(20, 22, 18, 22)
         );
 
-        card.setMinHeight(
-                130
-        );
+        card.setMinHeight(130);
 
-        card.setStyle(
-                "-fx-background-color: " +
-                SURFACE +
-                ";" +
-                "-fx-border-color: " +
-                BORDER +
-                ";" +
+        String normalStyle =
+                "-fx-background-color: " + SURFACE + ";" +
+                "-fx-border-color: " + BORDER + ";" +
                 "-fx-border-radius: 14;" +
-                "-fx-background-radius: 14;"
-        );
+                "-fx-background-radius: 14;";
 
-        HBox top =
-                new HBox();
+        String hoverStyle =
+                "-fx-background-color: #F7FCFC;" +
+                "-fx-border-color: " + BLUE + ";" +
+                "-fx-border-radius: 14;" +
+                "-fx-background-radius: 14;" +
+                "-fx-effect: dropshadow(gaussian, rgba(37,99,235,0.14), 10, 0.12, 0, 2);";
 
-        top.setAlignment(
-                Pos.CENTER_LEFT
-        );
+        card.setStyle(normalStyle);
+        card.setCursor(Cursor.HAND);
 
-        Label titleLabel =
-                new Label(title);
+        HBox top = new HBox();
+        top.setAlignment(Pos.CENTER_LEFT);
 
-        titleLabel.setTextFill(
-                Color.web(HEADING)
-        );
-
+        Label titleLabel = new Label(title);
+        titleLabel.setTextFill(Color.web(HEADING));
         titleLabel.setFont(
                 Font.font(
                         "Arial",
@@ -333,21 +259,11 @@ public class VehicleManagementPage extends AdminSectionPage {
                 )
         );
 
-        Region spacer =
-                new Region();
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        HBox.setHgrow(
-                spacer,
-                Priority.ALWAYS
-        );
-
-        Label tag =
-                new Label(tagText);
-
-        tag.setTextFill(
-                Color.web(color)
-        );
-
+        Label tag = new Label(tagText);
+        tag.setTextFill(Color.web(color));
         tag.setFont(
                 Font.font(
                         "Arial",
@@ -357,12 +273,7 @@ public class VehicleManagementPage extends AdminSectionPage {
         );
 
         tag.setPadding(
-                new Insets(
-                        6,
-                        10,
-                        6,
-                        10
-                )
+                new Insets(6, 10, 6, 10)
         );
 
         tag.setStyle(
@@ -378,24 +289,28 @@ public class VehicleManagementPage extends AdminSectionPage {
                 tag
         );
 
-        Label subtitleLabel =
-                new Label(subtitle);
-
-        subtitleLabel.setTextFill(
-                Color.web(TEXT)
-        );
-
-        subtitleLabel.setFont(
-                Font.font(
-                        "Arial",
-                        14
-                )
-        );
+        Label subtitleLabel = new Label(subtitle);
+        subtitleLabel.setTextFill(Color.web(TEXT));
+        subtitleLabel.setFont(Font.font("Arial", 14));
 
         card.getChildren().addAll(
                 top,
                 value,
                 subtitleLabel
+        );
+
+        card.setOnMouseEntered(
+                event -> {
+                    card.setStyle(hoverStyle);
+                    card.setTranslateY(-2);
+                }
+        );
+
+        card.setOnMouseExited(
+                event -> {
+                    card.setStyle(normalStyle);
+                    card.setTranslateY(0);
+                }
         );
 
         return card;
@@ -407,49 +322,21 @@ public class VehicleManagementPage extends AdminSectionPage {
 
     private HBox createToolbar() {
 
-        HBox toolbar =
-                new HBox(12);
+        HBox toolbar = new HBox(12);
+        toolbar.setAlignment(Pos.CENTER_LEFT);
 
-        toolbar.setAlignment(
-                Pos.CENTER_LEFT
-        );
+        searchField = new TextField();
 
-        TextField search =
-                new TextField();
-
-        search.setPromptText(
+        searchField.setPromptText(
                 "Search vehicle number, owner, brand, model..."
         );
 
-        search.setPrefWidth(
-                410
-        );
+        searchField.setPrefWidth(390);
+        searchField.setPrefHeight(44);
 
-        search.setPrefHeight(
-                44
-        );
+        styleTextField(searchField);
 
-        search.setStyle(
-                "-fx-background-color: " +
-                SURFACE +
-                ";" +
-                "-fx-text-fill: " +
-                HEADING +
-                ";" +
-                "-fx-prompt-text-fill: " +
-                TEXT +
-                ";" +
-                "-fx-border-color: " +
-                BORDER +
-                ";" +
-                "-fx-border-radius: 9;" +
-                "-fx-background-radius: 9;" +
-                "-fx-padding: 0 14 0 14;" +
-                "-fx-font-size: 16px;"
-        );
-
-        ComboBox<String> statusFilter =
-                new ComboBox<>();
+        statusFilter = new ComboBox<>();
 
         statusFilter.getItems().addAll(
                 "All",
@@ -457,111 +344,76 @@ public class VehicleManagementPage extends AdminSectionPage {
                 "Inactive"
         );
 
-        statusFilter.setValue(
-                "All"
+        statusFilter.setValue("All");
+        statusFilter.setPrefWidth(125);
+        statusFilter.setPrefHeight(44);
+
+        styleComboBox(statusFilter);
+
+        sortFilter = new ComboBox<>();
+
+        sortFilter.getItems().addAll(
+                "Newest First",
+                "Oldest First",
+                "Vehicle A-Z",
+                "Vehicle Z-A",
+                "Year Newest",
+                "Year Oldest"
         );
 
-        statusFilter.setPrefWidth(
-                125
+        sortFilter.setValue("Newest First");
+        sortFilter.setPrefWidth(150);
+        sortFilter.setPrefHeight(44);
+
+        styleComboBox(sortFilter);
+
+        Button refresh = createActionButton(
+                "Refresh",
+                BLUE
         );
 
-        statusFilter.setPrefHeight(
-                44
-        );
+        refresh.setPrefHeight(44);
 
-        statusFilter.setStyle(
-                "-fx-background-color: " +
-                SURFACE +
-                ";" +
-                "-fx-border-color: " +
-                BORDER +
-                ";" +
-                "-fx-border-radius: 9;" +
-                "-fx-background-radius: 9;" +
-                "-fx-font-size: 16px;"
-        );
-
-        Button refresh =
-                createActionButton(
-                        "Refresh",
-                        BLUE
-                );
-
-        refresh.setPrefHeight(
-                44
-        );
-
-        Region spacer =
-                new Region();
-
+        Region spacer = new Region();
         HBox.setHgrow(
                 spacer,
                 Priority.ALWAYS
         );
 
-        Button add =
-                createActionButton(
-                        "+ Add Vehicle",
-                        ORANGE
-                );
-
-        add.setPrefHeight(
-                44
+        Button add = createActionButton(
+                "+ Add Vehicle",
+                ORANGE
         );
 
-        search.textProperty()
-                .addListener(
-                        (obs, oldValue, newValue) -> {
+        add.setPrefHeight(44);
 
-                            if (
-                                    newValue == null ||
-                                    newValue.isBlank()
-                            ) {
+        searchField.textProperty().addListener(
+                (obs, oldValue, newValue) ->
+                        applyFilters()
+        );
 
-                                loadVehicles();
+        statusFilter.valueProperty().addListener(
+                (obs, oldValue, newValue) ->
+                        applyFilters()
+        );
 
-                            } else {
-
-                                searchVehicles(
-                                        newValue.trim()
-                                );
-                            }
-                        }
-                );
-
-        statusFilter.valueProperty()
-                .addListener(
-                        (obs, oldValue, newValue) -> {
-
-                            if (
-                                    newValue == null ||
-                                    newValue.equals("All")
-                            ) {
-
-                                loadVehicles();
-
-                            } else {
-
-                                filterVehicles(
-                                        newValue
-                                );
-                            }
-                        }
-                );
+        sortFilter.valueProperty().addListener(
+                (obs, oldValue, newValue) ->
+                        applyFilters()
+        );
 
         refresh.setOnAction(
-                event ->
-                        loadVehicles()
+                event -> loadVehicles()
         );
 
         add.setOnAction(
-                event ->
-                        showAddDialog()
+                event -> showAddDialog()
         );
 
         toolbar.getChildren().addAll(
-                search,
+                searchField,
                 statusFilter,
+                sortFilter,
                 refresh,
                 spacer,
                 add
@@ -571,7 +423,7 @@ public class VehicleManagementPage extends AdminSectionPage {
     }
 
     // =========================================================
-    // ACTION BUTTON
+    // BUTTON
     // =========================================================
 
     private Button createActionButton(
@@ -579,13 +431,9 @@ public class VehicleManagementPage extends AdminSectionPage {
             String color
     ) {
 
-        Button button =
-                new Button(text);
+        Button button = new Button(text);
 
-        button.setTextFill(
-                Color.WHITE
-        );
-
+        button.setTextFill(Color.WHITE);
         button.setFont(
                 Font.font(
                         "Arial",
@@ -594,18 +442,43 @@ public class VehicleManagementPage extends AdminSectionPage {
                 )
         );
 
-        button.setPrefHeight(
-                42
+        button.setPrefHeight(42);
+        button.setPadding(
+                new Insets(0, 18, 0, 18)
         );
 
-        button.setPadding(
-                new Insets(
-                        0,
-                        18,
-                        0,
-                        18
-                )
+        button.setCursor(Cursor.HAND);
+
+        setButtonStyle(
+                button,
+                color
         );
+
+        button.setOnMouseEntered(
+                event ->
+                        setButtonStyle(
+                                button,
+                                color.equals(ORANGE)
+                                        ? ORANGE_HOVER
+                                        : "#1D4ED8"
+                        )
+        );
+
+        button.setOnMouseExited(
+                event ->
+                        setButtonStyle(
+                                button,
+                                color
+                        )
+        );
+
+        return button;
+    }
+
+    private void setButtonStyle(
+            Button button,
+            String color
+    ) {
 
         button.setStyle(
                 "-fx-background-color: " +
@@ -614,51 +487,17 @@ public class VehicleManagementPage extends AdminSectionPage {
                 "-fx-background-radius: 9;" +
                 "-fx-cursor: hand;"
         );
-
-        button.setOnMouseEntered(
-                event -> {
-
-                    String hoverColor =
-                            color.equals(ORANGE)
-                                    ? ORANGE_HOVER
-                                    : "#1D4ED8";
-
-                    button.setStyle(
-                            "-fx-background-color: " +
-                            hoverColor +
-                            ";" +
-                            "-fx-background-radius: 9;" +
-                            "-fx-cursor: hand;"
-                    );
-                }
-        );
-
-        button.setOnMouseExited(
-                event ->
-                        button.setStyle(
-                                "-fx-background-color: " +
-                                color +
-                                ";" +
-                                "-fx-background-radius: 9;" +
-                                "-fx-cursor: hand;"
-                        )
-        );
-
-        return button;
     }
 
     // =========================================================
-    // TABLE CARD
+    // RECORDS CARD
     // =========================================================
 
-    private VBox createTableCard() {
+    private VBox createRecordsCard() {
 
-        VBox card =
-                new VBox(15);
+        VBox card = new VBox(15);
 
-        card.setPadding(
-                new Insets(21)
-        );
+        card.setPadding(new Insets(21));
 
         card.setStyle(
                 "-fx-background-color: " +
@@ -671,25 +510,16 @@ public class VehicleManagementPage extends AdminSectionPage {
                 "-fx-background-radius: 14;"
         );
 
-        HBox header =
-                new HBox();
+        HBox header = new HBox();
+        header.setAlignment(Pos.CENTER_LEFT);
 
-        header.setAlignment(
-                Pos.CENTER_LEFT
+        VBox headingBox = new VBox(4);
+
+        Label heading = new Label(
+                "Vehicle Information"
         );
 
-        VBox headingBox =
-                new VBox(4);
-
-        Label heading =
-                new Label(
-                        "Vehicle Records"
-                );
-
-        heading.setTextFill(
-                Color.web(HEADING)
-        );
-
+        heading.setTextFill(Color.web(HEADING));
         heading.setFont(
                 Font.font(
                         "Arial",
@@ -698,44 +528,42 @@ public class VehicleManagementPage extends AdminSectionPage {
                 )
         );
 
-        Label subtitle =
-                new Label(
-                        "Customer vehicles registered in RoadGuardian"
-                );
-
-        subtitle.setTextFill(
-                Color.web(TEXT)
+        Label subtitle = new Label(
+                "Registered vehicles and their current information"
         );
 
-        subtitle.setFont(
+        subtitle.setTextFill(Color.web(TEXT));
+        subtitle.setFont(Font.font("Arial", 14));
+
+        resultCountLabel = new Label("0 vehicles");
+
+        resultCountLabel.setTextFill(
+                Color.web(BLUE)
+        );
+
+        resultCountLabel.setFont(
                 Font.font(
                         "Arial",
+                        FontWeight.BOLD,
                         14
                 )
         );
 
         headingBox.getChildren().addAll(
                 heading,
-                subtitle
+                subtitle,
+                resultCountLabel
         );
 
-        Region spacer =
-                new Region();
-
+        Region spacer = new Region();
         HBox.setHgrow(
                 spacer,
                 Priority.ALWAYS
         );
 
-        Label live =
-                new Label(
-                        "● Live Data"
-                );
+        Label live = new Label("● Live Data");
 
-        live.setTextFill(
-                Color.web(GREEN)
-        );
-
+        live.setTextFill(Color.web(GREEN));
         live.setFont(
                 Font.font(
                         "Arial",
@@ -745,12 +573,7 @@ public class VehicleManagementPage extends AdminSectionPage {
         );
 
         live.setPadding(
-                new Insets(
-                        7,
-                        11,
-                        7,
-                        11
-                )
+                new Insets(7, 11, 7, 11)
         );
 
         live.setStyle(
@@ -766,494 +589,906 @@ public class VehicleManagementPage extends AdminSectionPage {
                 live
         );
 
-        vehicleTable =
-                new TableView<>();
-
-        vehicleTable.setItems(
-                vehicleList
+        vehicleCards = new VBox(12);
+        vehicleCards.setFillWidth(true);
+        vehicleCards.setPadding(
+                new Insets(3, 2, 10, 2)
         );
 
-        vehicleTable.setColumnResizePolicy(
-                TableView.CONSTRAINED_RESIZE_POLICY
+        ScrollPane scrollPane =
+                new ScrollPane(vehicleCards);
+
+        scrollPane.setFitToWidth(true);
+        scrollPane.setPannable(true);
+
+        scrollPane.setHbarPolicy(
+                ScrollPane.ScrollBarPolicy.NEVER
         );
 
-        vehicleTable.setFixedCellSize(
-                58
+        scrollPane.setVbarPolicy(
+                ScrollPane.ScrollBarPolicy.AS_NEEDED
         );
 
-        vehicleTable.setPrefHeight(
-                430
-        );
-
-        vehicleTable.setStyle(
-                "-fx-background-color: " +
-                SURFACE +
-                ";" +
-                "-fx-control-inner-background: " +
-                SURFACE +
-                ";" +
-                "-fx-table-cell-border-color: " +
-                BORDER +
-                ";" +
-                "-fx-border-color: " +
-                BORDER +
-                ";"
-        );
-
-        // =====================================================
-        // COLUMNS
-        // =====================================================
-
-        TableColumn<Vehicle, String> idColumn =
-                new TableColumn<>(
-                        "VEHICLE ID"
-                );
-
-        TableColumn<Vehicle, String> numberColumn =
-                new TableColumn<>(
-                        "VEHICLE NUMBER"
-                );
-
-        TableColumn<Vehicle, String> ownerColumn =
-                new TableColumn<>(
-                        "OWNER"
-                );
-
-        TableColumn<Vehicle, String> brandColumn =
-                new TableColumn<>(
-                        "BRAND"
-                );
-
-        TableColumn<Vehicle, String> modelColumn =
-                new TableColumn<>(
-                        "MODEL"
-                );
-
-        TableColumn<Vehicle, String> typeColumn =
-                new TableColumn<>(
-                        "TYPE"
-                );
-
-        TableColumn<Vehicle, String> fuelColumn =
-                new TableColumn<>(
-                        "FUEL"
-                );
-
-        TableColumn<Vehicle, String> yearColumn =
-                new TableColumn<>(
-                        "YEAR"
-                );
-
-        TableColumn<Vehicle, String> statusColumn =
-                new TableColumn<>(
-                        "STATUS"
-                );
-
-        idColumn.setCellValueFactory(
-                new PropertyValueFactory<>(
-                        "vehicleId"
-                )
-        );
-
-        numberColumn.setCellValueFactory(
-                new PropertyValueFactory<>(
-                        "vehicleNumber"
-                )
-        );
-
-        ownerColumn.setCellValueFactory(
-                new PropertyValueFactory<>(
-                        "ownerName"
-                )
-        );
-
-        brandColumn.setCellValueFactory(
-                new PropertyValueFactory<>(
-                        "brand"
-                )
-        );
-
-        modelColumn.setCellValueFactory(
-                new PropertyValueFactory<>(
-                        "model"
-                )
-        );
-
-        typeColumn.setCellValueFactory(
-                new PropertyValueFactory<>(
-                        "vehicleType"
-                )
-        );
-
-        fuelColumn.setCellValueFactory(
-                new PropertyValueFactory<>(
-                        "fuelType"
-                )
-        );
-
-        yearColumn.setCellValueFactory(
-                new PropertyValueFactory<>(
-                        "year"
-                )
-        );
-
-        statusColumn.setCellValueFactory(
-                new PropertyValueFactory<>(
-                        "status"
-                )
-        );
-
-        idColumn.setMinWidth(150);
-        numberColumn.setMinWidth(140);
-        ownerColumn.setMinWidth(150);
-        brandColumn.setMinWidth(110);
-        modelColumn.setMinWidth(110);
-        typeColumn.setMinWidth(110);
-        fuelColumn.setMinWidth(90);
-        yearColumn.setMinWidth(80);
-        statusColumn.setMinWidth(110);
-
-        // =====================================================
-        // NORMAL CELLS
-        // =====================================================
-
-        idColumn.setCellFactory(
-                column ->
-                        createNormalCell(13)
-        );
-
-        brandColumn.setCellFactory(
-                column ->
-                        createNormalCell(15)
-        );
-
-        modelColumn.setCellFactory(
-                column ->
-                        createNormalCell(15)
-        );
-
-        typeColumn.setCellFactory(
-                column ->
-                        createNormalCell(15)
-        );
-
-        fuelColumn.setCellFactory(
-                column ->
-                        createNormalCell(15)
-        );
-
-        yearColumn.setCellFactory(
-                column ->
-                        createNormalCell(15)
-        );
-
-        // =====================================================
-        // VEHICLE NUMBER
-        // =====================================================
-
-        numberColumn.setCellFactory(
-                column ->
-                        new TableCell<Vehicle, String>() {
-
-                            @Override
-                            protected void updateItem(
-                                    String item,
-                                    boolean empty
-                            ) {
-
-                                super.updateItem(
-                                        item,
-                                        empty
-                                );
-
-                                if (
-                                        empty ||
-                                        item == null
-                                ) {
-
-                                    setText(null);
-
-                                } else {
-
-                                    setText(item);
-
-                                    setTextFill(
-                                            Color.web(
-                                                    HEADING
-                                            )
-                                    );
-
-                                    setFont(
-                                            Font.font(
-                                                    "Arial",
-                                                    FontWeight.BOLD,
-                                                    15
-                                            )
-                                    );
-                                }
-                            }
-                        }
-        );
-
-        // =====================================================
-        // OWNER
-        // =====================================================
-
-        ownerColumn.setCellFactory(
-                column ->
-                        new TableCell<Vehicle, String>() {
-
-                            @Override
-                            protected void updateItem(
-                                    String item,
-                                    boolean empty
-                            ) {
-
-                                super.updateItem(
-                                        item,
-                                        empty
-                                );
-
-                                if (
-                                        empty ||
-                                        item == null
-                                ) {
-
-                                    setText(null);
-
-                                } else {
-
-                                    setText(item);
-
-                                    setTextFill(
-                                            Color.web(
-                                                    HEADING
-                                            )
-                                    );
-
-                                    setFont(
-                                            Font.font(
-                                                    "Arial",
-                                                    FontWeight.BOLD,
-                                                    15
-                                            )
-                                    );
-                                }
-                            }
-                        }
-        );
-
-        // =====================================================
-        // STATUS
-        // =====================================================
-
-        statusColumn.setCellFactory(
-                column ->
-                        new TableCell<Vehicle, String>() {
-
-                            @Override
-                            protected void updateItem(
-                                    String item,
-                                    boolean empty
-                            ) {
-
-                                super.updateItem(
-                                        item,
-                                        empty
-                                );
-
-                                if (
-                                        empty ||
-                                        item == null
-                                ) {
-
-                                    setText(null);
-                                    setGraphic(null);
-
-                                    return;
-                                }
-
-                                Label badge =
-                                        new Label(item);
-
-                                badge.setPadding(
-                                        new Insets(
-                                                7,
-                                                13,
-                                                7,
-                                                13
-                                        )
-                                );
-
-                                badge.setFont(
-                                        Font.font(
-                                                "Arial",
-                                                FontWeight.BOLD,
-                                                14
-                                        )
-                                );
-
-                                if (
-                                        item.equalsIgnoreCase(
-                                                "Active"
-                                        )
-                                ) {
-
-                                    badge.setTextFill(
-                                            Color.web(
-                                                    GREEN
-                                            )
-                                    );
-
-                                    badge.setStyle(
-                                            "-fx-background-color: " +
-                                            GREEN +
-                                            "18;" +
-                                            "-fx-background-radius: 20;"
-                                    );
-
-                                } else {
-
-                                    badge.setTextFill(
-                                            Color.web(
-                                                    RED
-                                            )
-                                    );
-
-                                    badge.setStyle(
-                                            "-fx-background-color: " +
-                                            RED +
-                                            "18;" +
-                                            "-fx-background-radius: 20;"
-                                    );
-                                }
-
-                                setGraphic(badge);
-                            }
-                        }
-        );
-
-        vehicleTable.getColumns().addAll(
-                idColumn,
-                numberColumn,
-                ownerColumn,
-                brandColumn,
-                modelColumn,
-                typeColumn,
-                fuelColumn,
-                yearColumn,
-                statusColumn
-        );
-
-        vehicleTable.setPlaceholder(
-                createEmptyState()
-        );
-
-        // =====================================================
-        // DOUBLE CLICK
-        // =====================================================
-
-        vehicleTable.setRowFactory(
-                tableView -> {
-
-                    TableRow<Vehicle> row =
-                            new TableRow<>();
-
-                    row.setOnMouseClicked(
-                            event -> {
-
-                                if (
-                                        event.getClickCount() == 2 &&
-                                        !row.isEmpty()
-                                ) {
-
-                                    showDetails(
-                                            row.getItem()
-                                    );
-                                }
-                            }
-                    );
-
-                    return row;
-                }
+        scrollPane.setStyle(
+                "-fx-background-color: transparent;" +
+                "-fx-background: transparent;"
         );
 
         VBox.setVgrow(
-                vehicleTable,
+                scrollPane,
                 Priority.ALWAYS
         );
 
         card.getChildren().addAll(
                 header,
-                vehicleTable
+                scrollPane
         );
 
         return card;
     }
 
     // =========================================================
-    // NORMAL CELL
+    // VEHICLE CARD
     // =========================================================
 
-    private TableCell<Vehicle, String>
-    createNormalCell(
-            int size
+    private VBox createVehicleCard(
+            Vehicle vehicle,
+            int number
     ) {
 
-        return new TableCell<Vehicle, String>() {
+        VBox card = new VBox(14);
 
-            @Override
-            protected void updateItem(
-                    String item,
-                    boolean empty
-            ) {
+        card.setPadding(
+                new Insets(18, 20, 18, 20)
+        );
 
-                super.updateItem(
-                        item,
-                        empty
+        card.setMaxWidth(
+                Double.MAX_VALUE
+        );
+
+        card.setCursor(Cursor.HAND);
+
+        String normalStyle =
+                "-fx-background-color: " +
+                SECONDARY +
+                ";" +
+                "-fx-border-color: " +
+                BORDER +
+                ";" +
+                "-fx-border-radius: 13;" +
+                "-fx-background-radius: 13;";
+
+        String hoverStyle =
+                "-fx-background-color: #EAF8FA;" +
+                "-fx-border-color: " +
+                BLUE +
+                ";" +
+                "-fx-border-radius: 13;" +
+                "-fx-background-radius: 13;" +
+                "-fx-effect: dropshadow(gaussian, rgba(37,99,235,0.18), 12, 0.15, 0, 3);";
+
+        card.setStyle(normalStyle);
+
+        // -----------------------------------------------------
+        // TOP
+        // -----------------------------------------------------
+
+        HBox top = new HBox(13);
+        top.setAlignment(Pos.CENTER_LEFT);
+
+        StackPane avatar = createVehicleAvatar();
+
+        VBox identity = new VBox(3);
+
+        HBox numberLine = new HBox(9);
+        numberLine.setAlignment(Pos.CENTER_LEFT);
+
+        Label serial = new Label("#" + number);
+
+        serial.setTextFill(Color.web(BLUE));
+        serial.setFont(
+                Font.font(
+                        "Arial",
+                        FontWeight.BOLD,
+                        12
+                )
+        );
+
+        serial.setPadding(
+                new Insets(4, 8, 4, 8)
+        );
+
+        serial.setStyle(
+                "-fx-background-color: " +
+                BLUE +
+                "14;" +
+                "-fx-background-radius: 20;"
+        );
+
+        Label vehicleNumber = new Label(
+                safe(vehicle.getVehicleNumber())
+        );
+
+        vehicleNumber.setTextFill(
+                Color.web(HEADING)
+        );
+
+        vehicleNumber.setFont(
+                Font.font(
+                        "Arial",
+                        FontWeight.BOLD,
+                        19
+                )
+        );
+
+        numberLine.getChildren().addAll(
+                serial,
+                vehicleNumber
+        );
+
+        Label owner = new Label(
+                "Owner: " +
+                safe(vehicle.getOwnerName())
+        );
+
+        owner.setTextFill(Color.web(TEXT));
+        owner.setFont(
+                Font.font(
+                        "Arial",
+                        13
+                )
+        );
+
+        identity.getChildren().addAll(
+                numberLine,
+                owner
+        );
+
+        Region spacer = new Region();
+
+        HBox.setHgrow(
+                spacer,
+                Priority.ALWAYS
+        );
+
+        Label statusBadge =
+                createStatusBadge(
+                        safe(vehicle.getStatus())
                 );
 
-                if (
-                        empty ||
-                        item == null
-                ) {
+        top.getChildren().addAll(
+                avatar,
+                identity,
+                spacer,
+                statusBadge
+        );
 
-                    setText(null);
+        // -----------------------------------------------------
+        // INFORMATION
+        // -----------------------------------------------------
 
-                } else {
+        HBox infoRow = new HBox(12);
 
-                    setText(item);
+        VBox brand = createInfoBox(
+                "BRAND",
+                safe(vehicle.getBrand())
+        );
 
-                    setTextFill(
-                            Color.web(TEXT)
-                    );
+        VBox model = createInfoBox(
+                "MODEL",
+                safe(vehicle.getModel())
+        );
 
-                    setFont(
-                            Font.font(
-                                    "Arial",
-                                    size
-                            )
-                    );
+        VBox type = createInfoBox(
+                "TYPE",
+                safe(vehicle.getVehicleType())
+        );
+
+        VBox fuel = createInfoBox(
+                "FUEL",
+                safe(vehicle.getFuelType())
+        );
+
+        VBox year = createInfoBox(
+                "YEAR",
+                safe(vehicle.getYear())
+        );
+
+        HBox.setHgrow(
+                brand,
+                Priority.ALWAYS
+        );
+
+        HBox.setHgrow(
+                model,
+                Priority.ALWAYS
+        );
+
+        HBox.setHgrow(
+                type,
+                Priority.ALWAYS
+        );
+
+        HBox.setHgrow(
+                fuel,
+                Priority.ALWAYS
+        );
+
+        HBox.setHgrow(
+                year,
+                Priority.ALWAYS
+        );
+
+        infoRow.getChildren().addAll(
+                brand,
+                model,
+                type,
+                fuel,
+                year
+        );
+
+        // -----------------------------------------------------
+        // BOTTOM
+        // -----------------------------------------------------
+
+        HBox bottom = new HBox(12);
+        bottom.setAlignment(Pos.CENTER_LEFT);
+
+        Label customerId = new Label(
+                "Customer ID: " +
+                safe(vehicle.getCustomerId())
+        );
+
+        customerId.setTextFill(
+                Color.web(TEXT)
+        );
+
+        customerId.setFont(
+                Font.font(
+                        "Arial",
+                        12
+                )
+        );
+
+        Region bottomSpacer = new Region();
+
+        HBox.setHgrow(
+                bottomSpacer,
+                Priority.ALWAYS
+        );
+
+        Button details =
+                new Button("View Details →");
+
+        styleSmallButton(
+                details,
+                BLUE
+        );
+
+        details.setOnAction(
+                event ->
+                        showDetails(vehicle)
+        );
+
+        bottom.getChildren().addAll(
+                customerId,
+                bottomSpacer,
+                details
+        );
+
+        card.getChildren().addAll(
+                top,
+                new Separator(),
+                infoRow,
+                bottom
+        );
+
+        // -----------------------------------------------------
+        // HOVER
+        // -----------------------------------------------------
+
+        card.setOnMouseEntered(
+                event -> {
+                    card.setStyle(hoverStyle);
+                    card.setTranslateY(-2);
                 }
-            }
-        };
+        );
+
+        card.setOnMouseExited(
+                event -> {
+                    card.setStyle(normalStyle);
+                    card.setTranslateY(0);
+                }
+        );
+
+        // -----------------------------------------------------
+        // DOUBLE CLICK
+        // -----------------------------------------------------
+
+        card.setOnMouseClicked(
+                event -> {
+
+                    if (
+                            event.getClickCount() == 2 &&
+                            event.getTarget() != details
+                    ) {
+                        showDetails(vehicle);
+                    }
+                }
+        );
+
+        return card;
     }
 
-    // =====================================================
-    // EMPTY STATE
-    // =====================================================
+    // =========================================================
+    // VEHICLE AVATAR
+    // =========================================================
+
+    private StackPane createVehicleAvatar() {
+
+        Circle circle = new Circle(
+                24,
+                Color.web(ORANGE)
+        );
+
+        Label icon = new Label("▰");
+
+        icon.setTextFill(Color.WHITE);
+
+        icon.setFont(
+                Font.font(
+                        "Arial",
+                        FontWeight.BOLD,
+                        15
+                )
+        );
+
+        StackPane avatar =
+                new StackPane(
+                        circle,
+                        icon
+                );
+
+        avatar.setMinSize(48, 48);
+        avatar.setPrefSize(48, 48);
+        avatar.setMaxSize(48, 48);
+
+        return avatar;
+    }
+
+    // =========================================================
+    // INFO BOX
+    // =========================================================
+
+    private VBox createInfoBox(
+            String title,
+            String value
+    ) {
+
+        VBox box = new VBox(5);
+
+        box.setPadding(
+                new Insets(10, 12, 10, 12)
+        );
+
+        box.setStyle(
+                "-fx-background-color: " +
+                SURFACE +
+                ";" +
+                "-fx-background-radius: 9;" +
+                "-fx-border-color: " +
+                BORDER +
+                ";" +
+                "-fx-border-radius: 9;"
+        );
+
+        Label titleLabel = new Label(title);
+
+        titleLabel.setTextFill(
+                Color.web(TEXT)
+        );
+
+        titleLabel.setFont(
+                Font.font(
+                        "Arial",
+                        FontWeight.BOLD,
+                        11
+                )
+        );
+
+        Label valueLabel = new Label(value);
+
+        valueLabel.setTextFill(
+                Color.web(HEADING)
+        );
+
+        valueLabel.setFont(
+                Font.font(
+                        "Arial",
+                        FontWeight.BOLD,
+                        14
+                )
+        );
+
+        valueLabel.setWrapText(true);
+
+        box.getChildren().addAll(
+                titleLabel,
+                valueLabel
+        );
+
+        return box;
+    }
+
+    // =========================================================
+    // STATUS BADGE
+    // =========================================================
+
+    private Label createStatusBadge(
+            String status
+    ) {
+
+        Label badge = new Label(
+                status.equals("-")
+                        ? "Unknown"
+                        : status
+        );
+
+        badge.setFont(
+                Font.font(
+                        "Arial",
+                        FontWeight.BOLD,
+                        13
+                )
+        );
+
+        badge.setPadding(
+                new Insets(7, 12, 7, 12)
+        );
+
+        if (
+                status.equalsIgnoreCase("Active")
+        ) {
+
+            badge.setTextFill(
+                    Color.web(GREEN)
+            );
+
+            badge.setStyle(
+                    "-fx-background-color: " +
+                    GREEN +
+                    "18;" +
+                    "-fx-background-radius: 20;"
+            );
+
+        } else {
+
+            badge.setTextFill(
+                    Color.web(RED)
+            );
+
+            badge.setStyle(
+                    "-fx-background-color: " +
+                    RED +
+                    "18;" +
+                    "-fx-background-radius: 20;"
+            );
+        }
+
+        return badge;
+    }
+
+    // =========================================================
+    // SMALL BUTTON
+    // =========================================================
+
+    private void styleSmallButton(
+            Button button,
+            String color
+    ) {
+
+        button.setFont(
+                Font.font(
+                        "Arial",
+                        FontWeight.BOLD,
+                        13
+                )
+        );
+
+        button.setPadding(
+                new Insets(8, 13, 8, 13)
+        );
+
+        button.setCursor(Cursor.HAND);
+
+        String normalColor =
+                color.equals(BLUE)
+                        ? BLUE
+                        : SURFACE;
+
+        String hoverColor =
+                color.equals(BLUE)
+                        ? "#1D4ED8"
+                        : SECONDARY;
+
+        button.setTextFill(
+                color.equals(BLUE)
+                        ? Color.WHITE
+                        : Color.web(HEADING)
+        );
+
+        button.setStyle(
+                "-fx-background-color: " +
+                normalColor +
+                ";" +
+                "-fx-background-radius: 8;" +
+                "-fx-border-color: " +
+                (color.equals(BLUE)
+                        ? BLUE
+                        : BORDER) +
+                ";" +
+                "-fx-border-radius: 8;"
+        );
+
+        button.setOnMouseEntered(
+                event ->
+                        button.setStyle(
+                                "-fx-background-color: " +
+                                hoverColor +
+                                ";" +
+                                "-fx-background-radius: 8;" +
+                                "-fx-border-color: " +
+                                (color.equals(BLUE)
+                                        ? "#1D4ED8"
+                                        : BLUE) +
+                                ";" +
+                                "-fx-border-radius: 8;"
+                        )
+        );
+
+        button.setOnMouseExited(
+                event ->
+                        button.setStyle(
+                                "-fx-background-color: " +
+                                normalColor +
+                                ";" +
+                                "-fx-background-radius: 8;" +
+                                "-fx-border-color: " +
+                                (color.equals(BLUE)
+                                        ? BLUE
+                                        : BORDER) +
+                                ";" +
+                                "-fx-border-radius: 8;"
+                        )
+        );
+    }
+
+    // =========================================================
+    // TEXT FIELD
+    // =========================================================
+
+    private void styleTextField(
+            TextField field
+    ) {
+
+        field.setStyle(
+                "-fx-background-color: " +
+                SURFACE +
+                ";" +
+                "-fx-text-fill: " +
+                HEADING +
+                ";" +
+                "-fx-prompt-text-fill: " +
+                TEXT +
+                ";" +
+                "-fx-border-color: " +
+                BORDER +
+                ";" +
+                "-fx-border-radius: 9;" +
+                "-fx-background-radius: 9;" +
+                "-fx-padding: 0 14 0 14;" +
+                "-fx-font-size: 15px;"
+        );
+    }
+
+    private void styleComboBox(
+            ComboBox<String> combo
+    ) {
+
+        combo.setStyle(
+                "-fx-background-color: " +
+                SURFACE +
+                ";" +
+                "-fx-border-color: " +
+                BORDER +
+                ";" +
+                "-fx-border-radius: 9;" +
+                "-fx-background-radius: 9;" +
+                "-fx-font-size: 14px;"
+        );
+    }
+
+    // =========================================================
+    // LOAD
+    // =========================================================
+
+    private void loadVehicles() {
+
+        try {
+
+            List<Vehicle> vehicles =
+                    controller.getAllVehicles();
+
+            allVehicles.clear();
+            allVehicles.addAll(vehicles);
+
+            updateStatistics(
+                    allVehicles
+            );
+
+            applyFilters();
+
+        } catch (Exception e) {
+
+            e.printStackTrace();
+
+            showError(
+                    "Unable to Load Vehicles",
+                    e.getMessage()
+            );
+        }
+    }
+
+    // =========================================================
+    // FILTER + SEARCH + SORT
+    // =========================================================
+
+    private void applyFilters() {
+
+        if (vehicleCards == null) {
+            return;
+        }
+
+        String search =
+                searchField == null
+                        ? ""
+                        : searchField
+                                .getText()
+                                .trim()
+                                .toLowerCase();
+
+        String status =
+                statusFilter == null
+                        ? "All"
+                        : statusFilter.getValue();
+
+        String sort =
+                sortFilter == null
+                        ? "Newest First"
+                        : sortFilter.getValue();
+
+        List<Vehicle> filtered =
+                new ArrayList<>();
+
+        for (Vehicle vehicle : allVehicles) {
+
+            if (!matchesSearch(
+                    vehicle,
+                    search
+            )) {
+                continue;
+            }
+
+            if (
+                    !"All".equals(status) &&
+                    !status.equalsIgnoreCase(
+                            safe(vehicle.getStatus())
+                    )
+            ) {
+                continue;
+            }
+
+            filtered.add(vehicle);
+        }
+
+        sortVehicles(
+                filtered,
+                sort
+        );
+
+        vehicleList.setAll(
+                filtered
+        );
+
+        renderVehicles(
+                filtered
+        );
+    }
+
+    private boolean matchesSearch(
+            Vehicle vehicle,
+            String search
+    ) {
+
+        if (search.isBlank()) {
+            return true;
+        }
+
+        return safe(vehicle.getVehicleNumber())
+                .toLowerCase()
+                .contains(search)
+
+                ||
+
+                safe(vehicle.getOwnerName())
+                        .toLowerCase()
+                        .contains(search)
+
+                ||
+
+                safe(vehicle.getBrand())
+                        .toLowerCase()
+                        .contains(search)
+
+                ||
+
+                safe(vehicle.getModel())
+                        .toLowerCase()
+                        .contains(search)
+
+                ||
+
+                safe(vehicle.getVehicleType())
+                        .toLowerCase()
+                        .contains(search)
+
+                ||
+
+                safe(vehicle.getFuelType())
+                        .toLowerCase()
+                        .contains(search);
+    }
+
+    private void sortVehicles(
+            List<Vehicle> vehicles,
+            String sort
+    ) {
+
+        if ("Vehicle A-Z".equals(sort)) {
+
+            vehicles.sort(
+                    Comparator.comparing(
+                            vehicle ->
+                                    safe(
+                                            vehicle.getVehicleNumber()
+                                    ).toLowerCase()
+                    )
+            );
+
+        } else if ("Vehicle Z-A".equals(sort)) {
+
+            vehicles.sort(
+                    Comparator.comparing(
+                            (Vehicle vehicle) ->
+                                    safe(
+                                            vehicle.getVehicleNumber()
+                                    ).toLowerCase()
+                    ).reversed()
+            );
+
+        } else if ("Year Newest".equals(sort)) {
+
+            vehicles.sort(
+                    Comparator.comparingInt(
+                            this::getYearNumber
+                    ).reversed()
+            );
+
+        } else if ("Year Oldest".equals(sort)) {
+
+            vehicles.sort(
+                    Comparator.comparingInt(
+                            this::getYearNumber
+                    )
+            );
+
+        } else if ("Oldest First".equals(sort)) {
+
+            vehicles.sort(
+                    Comparator.comparing(
+                            vehicle ->
+                                    safe(
+                                            vehicle.getCreatedAt()
+                                    )
+                    )
+            );
+
+        } else {
+
+            vehicles.sort(
+                    Comparator.comparing(
+                            (Vehicle vehicle) ->
+                                    safe(
+                                            vehicle.getCreatedAt()
+                                    )
+                    ).reversed()
+            );
+        }
+    }
+
+    private int getYearNumber(
+            Vehicle vehicle
+    ) {
+
+        try {
+
+            return Integer.parseInt(
+                    safe(
+                            vehicle.getYear()
+                    )
+            );
+
+        } catch (Exception e) {
+
+            return 0;
+        }
+    }
+
+    // =========================================================
+    // RENDER
+    // =========================================================
+
+    private void renderVehicles(
+            List<Vehicle> vehicles
+    ) {
+
+        vehicleCards.getChildren().clear();
+
+        if (vehicles.isEmpty()) {
+
+            vehicleCards.getChildren().add(
+                    createEmptyState()
+            );
+
+            resultCountLabel.setText(
+                    "0 vehicles found"
+            );
+
+            return;
+        }
+
+        int number = 1;
+
+        for (Vehicle vehicle : vehicles) {
+
+            vehicleCards.getChildren().add(
+                    createVehicleCard(
+                            vehicle,
+                            number++
+                    )
+            );
+        }
+
+        resultCountLabel.setText(
+                vehicles.size() == 1
+                        ? "1 vehicle"
+                        : vehicles.size() +
+                          " vehicles"
+        );
+    }
+
+    // =========================================================
+    // EMPTY
+    // =========================================================
 
     private VBox createEmptyState() {
 
-        VBox box =
-                new VBox(8);
+        VBox box = new VBox(9);
 
-        box.setAlignment(
-                Pos.CENTER
-        );
+        box.setAlignment(Pos.CENTER);
+        box.setPadding(new Insets(45));
 
-        Label icon =
-                new Label("▰");
+        Label icon = new Label("▰");
 
         icon.setTextFill(
                 Color.web(BLUE)
@@ -1263,14 +1498,13 @@ public class VehicleManagementPage extends AdminSectionPage {
                 Font.font(
                         "Arial",
                         FontWeight.BOLD,
-                        32
+                        34
                 )
         );
 
-        Label title =
-                new Label(
-                        "No vehicles found"
-                );
+        Label title = new Label(
+                "No vehicles found"
+        );
 
         title.setTextFill(
                 Color.web(HEADING)
@@ -1280,14 +1514,13 @@ public class VehicleManagementPage extends AdminSectionPage {
                 Font.font(
                         "Arial",
                         FontWeight.BOLD,
-                        17
+                        18
                 )
         );
 
-        Label subtitle =
-                new Label(
-                        "Registered customer vehicles will appear here."
-                );
+        Label subtitle = new Label(
+                "Try changing your search or filter."
+        );
 
         subtitle.setTextFill(
                 Color.web(TEXT)
@@ -1300,72 +1533,30 @@ public class VehicleManagementPage extends AdminSectionPage {
                 )
         );
 
+        Button add =
+                createActionButton(
+                        "+ Add Vehicle",
+                        ORANGE
+                );
+
+        add.setOnAction(
+                event ->
+                        showAddDialog()
+        );
+
         box.getChildren().addAll(
                 icon,
                 title,
-                subtitle
+                subtitle,
+                add
         );
 
         return box;
     }
 
-    // =====================================================
-    // LOAD VEHICLES
-    // =====================================================
-
-    private void loadVehicles() {
-
-        List<Vehicle> vehicles =
-                controller.getAllVehicles();
-
-        vehicleList.setAll(
-                vehicles
-        );
-
-        updateStatistics(
-                vehicles
-        );
-    }
-
-    // =====================================================
-    // SEARCH
-    // =====================================================
-
-    private void searchVehicles(
-            String text
-    ) {
-
-        List<Vehicle> result =
-                controller.searchVehicles(
-                        text
-                );
-
-        vehicleList.setAll(
-                result
-        );
-    }
-
-    // =====================================================
-    // FILTER
-    // =====================================================
-
-    private void filterVehicles(
-            String status
-    ) {
-
-        List<Vehicle> result =
-                controller.getVehiclesByStatus(
-                        status
-                );
-
-        vehicleList.setAll(
-                result
-        );
-    }
-
-    // =====================================================
+    // =========================================================
     // STATISTICS
-    // =====================================================
+    // =========================================================
 
     private void updateStatistics(
             List<Vehicle> vehicles
@@ -1374,17 +1565,12 @@ public class VehicleManagementPage extends AdminSectionPage {
         int active = 0;
         int inactive = 0;
 
-        for (
-                Vehicle vehicle :
-                vehicles
-        ) {
+        for (Vehicle vehicle : vehicles) {
 
             if (
-                    vehicle.getStatus() != null &&
-                    vehicle.getStatus()
-                            .equalsIgnoreCase(
-                                    "Active"
-                            )
+                    "Active".equalsIgnoreCase(
+                            safe(vehicle.getStatus())
+                    )
             ) {
 
                 active++;
@@ -1402,21 +1588,17 @@ public class VehicleManagementPage extends AdminSectionPage {
         );
 
         activeLabel.setText(
-                String.valueOf(
-                        active
-                )
+                String.valueOf(active)
         );
 
         inactiveLabel.setText(
-                String.valueOf(
-                        inactive
-                )
+                String.valueOf(inactive)
         );
     }
 
-    // =====================================================
+    // =========================================================
     // ADD VEHICLE
-    // =====================================================
+    // =========================================================
 
     private void showAddDialog() {
 
@@ -1444,81 +1626,39 @@ public class VehicleManagementPage extends AdminSectionPage {
                         ButtonType.CANCEL
                 );
 
-        GridPane form =
-                createForm();
+        GridPane form = createForm();
 
-        TextField customerId =
-                field();
-
-        TextField ownerName =
-                field();
-
-        TextField vehicleNumber =
-                field();
-
-        TextField brand =
-                field();
-
-        TextField model =
-                field();
+        TextField customerId = field();
+        TextField ownerName = field();
+        TextField vehicleNumber = field();
+        TextField brand = field();
+        TextField model = field();
+        TextField year = field();
 
         ComboBox<String> vehicleType =
-                new ComboBox<>();
-
-        vehicleType.getItems().addAll(
-                "Car",
-                "Bike",
-                "Scooter",
-                "SUV",
-                "Truck",
-                "Other"
-        );
-
-        vehicleType.setValue(
-                "Car"
-        );
-
-        vehicleType.setPrefWidth(
-                280
-        );
+                createCombo(
+                        "Car",
+                        "Bike",
+                        "Scooter",
+                        "SUV",
+                        "Truck",
+                        "Other"
+                );
 
         ComboBox<String> fuelType =
-                new ComboBox<>();
-
-        fuelType.getItems().addAll(
-                "Petrol",
-                "Diesel",
-                "CNG",
-                "Electric",
-                "Hybrid"
-        );
-
-        fuelType.setValue(
-                "Petrol"
-        );
-
-        fuelType.setPrefWidth(
-                280
-        );
-
-        TextField year =
-                field();
+                createCombo(
+                        "Petrol",
+                        "Diesel",
+                        "CNG",
+                        "Electric",
+                        "Hybrid"
+                );
 
         ComboBox<String> status =
-                new ComboBox<>();
-
-        status.getItems().addAll(
-                "Active",
-                "Inactive"
-        );
-
-        status.setValue(
-                "Active"
-        );
-
-        status.setPrefWidth(
-                280
-        );
+                createCombo(
+                        "Active",
+                        "Inactive"
+                );
 
         addFormRow(
                 form,
@@ -1584,47 +1724,47 @@ public class VehicleManagementPage extends AdminSectionPage {
         );
 
         dialog.getDialogPane()
-                .setContent(
-                        form
-                );
+                .setContent(form);
+
+        styleDialog(dialog);
 
         dialog.setResultConverter(
                 button -> {
 
                     if (
-                            button == saveButton
+                            button != saveButton
                     ) {
-
-                        return new Vehicle(
-                                "",
-                                customerId
-                                        .getText()
-                                        .trim(),
-                                ownerName
-                                        .getText()
-                                        .trim(),
-                                vehicleNumber
-                                        .getText()
-                                        .trim(),
-                                brand
-                                        .getText()
-                                        .trim(),
-                                model
-                                        .getText()
-                                        .trim(),
-                                vehicleType.getValue(),
-                                fuelType.getValue(),
-                                year
-                                        .getText()
-                                        .trim(),
-                                status.getValue(),
-                                String.valueOf(
-                                        System.currentTimeMillis()
-                                )
-                        );
+                        return null;
                     }
 
-                    return null;
+                    if (
+                            vehicleNumber.getText().isBlank() ||
+                            ownerName.getText().isBlank()
+                    ) {
+
+                        showError(
+                                "Invalid Data",
+                                "Vehicle number and owner name are required."
+                        );
+
+                        return null;
+                    }
+
+                    return new Vehicle(
+                            "",
+                            customerId.getText().trim(),
+                            ownerName.getText().trim(),
+                            vehicleNumber.getText().trim(),
+                            brand.getText().trim(),
+                            model.getText().trim(),
+                            vehicleType.getValue(),
+                            fuelType.getValue(),
+                            year.getText().trim(),
+                            status.getValue(),
+                            String.valueOf(
+                                    System.currentTimeMillis()
+                            )
+                    );
                 }
         );
 
@@ -1632,75 +1772,86 @@ public class VehicleManagementPage extends AdminSectionPage {
                 .ifPresent(
                         vehicle -> {
 
-                            if (
-                                    controller.addVehicle(
-                                            vehicle
-                                    )
-                            ) {
+                            try {
 
-                                loadVehicles();
+                                if (
+                                        controller.addVehicle(
+                                                vehicle
+                                        )
+                                ) {
 
-                                showInfo(
-                                        "Success",
-                                        "Vehicle added successfully."
-                                );
+                                    loadVehicles();
 
-                            } else {
+                                    showInfo(
+                                            "Success",
+                                            "Vehicle added successfully."
+                                    );
+
+                                } else {
+
+                                    showError(
+                                            "Failed",
+                                            "Vehicle could not be added."
+                                    );
+                                }
+
+                            } catch (Exception e) {
 
                                 showError(
                                         "Failed",
-                                        "Vehicle could not be added."
+                                        e.getMessage()
                                 );
                             }
                         }
                 );
     }
 
-    // =====================================================
-    // FORM
-    // =====================================================
+    // =========================================================
+    // FORM HELPERS
+    // =========================================================
 
     private GridPane createForm() {
 
-        GridPane form =
-                new GridPane();
+        GridPane form = new GridPane();
 
         form.setHgap(15);
         form.setVgap(13);
-
-        form.setPadding(
-                new Insets(20)
-        );
+        form.setPadding(new Insets(20));
 
         return form;
     }
 
     private TextField field() {
 
-        TextField field =
-                new TextField();
+        TextField field = new TextField();
 
-        field.setPrefWidth(
-                280
-        );
+        field.setPrefWidth(280);
+        field.setPrefHeight(40);
 
-        field.setPrefHeight(
-                40
-        );
-
-        field.setStyle(
-                "-fx-background-color: " +
-                SURFACE +
-                ";" +
-                "-fx-border-color: " +
-                BORDER +
-                ";" +
-                "-fx-border-radius: 7;" +
-                "-fx-background-radius: 7;" +
-                "-fx-font-size: 15px;"
-        );
+        styleTextField(field);
 
         return field;
+    }
+
+    private ComboBox<String> createCombo(
+            String... values
+    ) {
+
+        ComboBox<String> combo =
+                new ComboBox<>();
+
+        combo.getItems().addAll(values);
+
+        if (values.length > 0) {
+            combo.setValue(values[0]);
+        }
+
+        combo.setPrefWidth(280);
+        combo.setPrefHeight(40);
+
+        styleComboBox(combo);
+
+        return combo;
     }
 
     private void addFormRow(
@@ -1710,10 +1861,9 @@ public class VehicleManagementPage extends AdminSectionPage {
             int row
     ) {
 
-        Label label =
-                new Label(
-                        labelText
-                );
+        Label label = new Label(
+                labelText
+        );
 
         label.setTextFill(
                 Color.web(HEADING)
@@ -1740,108 +1890,219 @@ public class VehicleManagementPage extends AdminSectionPage {
         );
     }
 
-    // =====================================================
+    private void styleDialog(
+            Dialog<?> dialog
+    ) {
+
+        dialog.getDialogPane().setStyle(
+                "-fx-background-color: " +
+                BG +
+                ";"
+        );
+    }
+
+    // =========================================================
     // DETAILS
-    // =====================================================
+    // =========================================================
 
     private void showDetails(
             Vehicle vehicle
     ) {
 
-        Alert alert =
-                new Alert(
-                        Alert.AlertType.INFORMATION
-                );
+        Dialog<Void> dialog =
+                new Dialog<>();
 
-        alert.setTitle(
+        dialog.setTitle(
                 "Vehicle Details"
         );
 
-        alert.setHeaderText(
+        dialog.setHeaderText(
                 safe(
                         vehicle.getVehicleNumber()
                 )
         );
 
-        alert.setContentText(
-                "Vehicle ID: " +
-                safe(
-                        vehicle.getVehicleId()
-                ) +
+        ButtonType close =
+                new ButtonType(
+                        "Close",
+                        ButtonBar.ButtonData.CANCEL_CLOSE
+                );
 
-                "\n\nCustomer ID: " +
-                safe(
-                        vehicle.getCustomerId()
-                ) +
+        dialog.getDialogPane()
+                .getButtonTypes()
+                .add(close);
 
-                "\n\nOwner: " +
-                safe(
-                        vehicle.getOwnerName()
-                ) +
+        VBox content =
+                new VBox(12);
 
-                "\n\nBrand: " +
-                safe(
-                        vehicle.getBrand()
-                ) +
+        content.setPadding(
+                new Insets(20)
+        );
 
-                "\n\nModel: " +
-                safe(
-                        vehicle.getModel()
-                ) +
+        content.setPrefWidth(
+                450
+        );
 
-                "\n\nVehicle Type: " +
-                safe(
-                        vehicle.getVehicleType()
-                ) +
+        StackPane avatar =
+                createVehicleAvatar();
 
-                "\n\nFuel Type: " +
-                safe(
-                        vehicle.getFuelType()
-                ) +
+        Label vehicleNumber =
+                new Label(
+                        safe(
+                                vehicle.getVehicleNumber()
+                        )
+                );
 
-                "\n\nYear: " +
-                safe(
-                        vehicle.getYear()
-                ) +
+        vehicleNumber.setTextFill(
+                Color.web(HEADING)
+        );
 
-                "\n\nStatus: " +
-                safe(
-                        vehicle.getStatus()
+        vehicleNumber.setFont(
+                Font.font(
+                        "Arial",
+                        FontWeight.BOLD,
+                        22
                 )
         );
 
-        alert.showAndWait();
+        HBox profile =
+                new HBox(
+                        13,
+                        avatar,
+                        vehicleNumber
+                );
+
+        profile.setAlignment(
+                Pos.CENTER_LEFT
+        );
+
+        content.getChildren().addAll(
+                profile,
+                new Separator(),
+                createDetailRow(
+                        "Owner",
+                        vehicle.getOwnerName()
+                ),
+                createDetailRow(
+                        "Brand",
+                        vehicle.getBrand()
+                ),
+                createDetailRow(
+                        "Model",
+                        vehicle.getModel()
+                ),
+                createDetailRow(
+                        "Type",
+                        vehicle.getVehicleType()
+                ),
+                createDetailRow(
+                        "Fuel",
+                        vehicle.getFuelType()
+                ),
+                createDetailRow(
+                        "Year",
+                        vehicle.getYear()
+                ),
+                createDetailRow(
+                        "Status",
+                        vehicle.getStatus()
+                ),
+                createDetailRow(
+                        "Customer ID",
+                        vehicle.getCustomerId()
+                )
+        );
+
+        dialog.getDialogPane()
+                .setContent(content);
+
+        styleDialog(dialog);
+
+        dialog.showAndWait();
     }
 
-    // =====================================================
+    private HBox createDetailRow(
+            String labelText,
+            String valueText
+    ) {
+
+        HBox row = new HBox(15);
+
+        row.setAlignment(
+                Pos.CENTER_LEFT
+        );
+
+        Label label =
+                new Label(labelText);
+
+        label.setPrefWidth(100);
+
+        label.setTextFill(
+                Color.web(TEXT)
+        );
+
+        label.setFont(
+                Font.font(
+                        "Arial",
+                        FontWeight.BOLD,
+                        14
+                )
+        );
+
+        Label value =
+                new Label(
+                        safe(valueText)
+                );
+
+        value.setTextFill(
+                Color.web(HEADING)
+        );
+
+        value.setFont(
+                Font.font(
+                        "Arial",
+                        15
+                )
+        );
+
+        value.setWrapText(true);
+
+        HBox.setHgrow(
+                value,
+                Priority.ALWAYS
+        );
+
+        row.getChildren().addAll(
+                label,
+                value
+        );
+
+        return row;
+    }
+
+    // =========================================================
     // SAFE
-    // =====================================================
+    // =========================================================
 
     private String safe(
             String value
     ) {
 
-        if (
-                value == null ||
-                value.isBlank()
-        ) {
-
-            return "-";
-        }
-
-        return value;
+        return value == null ||
+               value.isBlank()
+                ? "-"
+                : value;
     }
 
-    // =====================================================
+    // =========================================================
     // ERROR VIEW
-    // =====================================================
+    // =========================================================
 
     private VBox createErrorView(
             String message
     ) {
 
-        VBox box =
-                new VBox(12);
+        VBox box = new VBox(12);
 
         box.setAlignment(
                 Pos.CENTER
@@ -1851,8 +2112,13 @@ public class VehicleManagementPage extends AdminSectionPage {
                 new Insets(30)
         );
 
-        Label icon =
-                new Label("!");
+        box.setStyle(
+                "-fx-background-color: " +
+                BG +
+                ";"
+        );
+
+        Label icon = new Label("!");
 
         icon.setTextFill(
                 Color.web(RED)
@@ -1866,10 +2132,9 @@ public class VehicleManagementPage extends AdminSectionPage {
                 )
         );
 
-        Label title =
-                new Label(
-                        "Vehicle Management Error"
-                );
+        Label title = new Label(
+                "Vehicle Management Error"
+        );
 
         title.setTextFill(
                 Color.web(HEADING)
@@ -1883,10 +2148,9 @@ public class VehicleManagementPage extends AdminSectionPage {
                 )
         );
 
-        Label text =
-                new Label(
-                        message
-                );
+        Label text = new Label(
+                message
+        );
 
         text.setTextFill(
                 Color.web(TEXT)
@@ -1908,9 +2172,9 @@ public class VehicleManagementPage extends AdminSectionPage {
         return box;
     }
 
-    // =====================================================
+    // =========================================================
     // ALERTS
-    // =====================================================
+    // =========================================================
 
     private void showInfo(
             String title,
@@ -1941,7 +2205,11 @@ public class VehicleManagementPage extends AdminSectionPage {
 
         alert.setTitle(title);
         alert.setHeaderText(null);
-        alert.setContentText(message);
+        alert.setContentText(
+                message == null
+                        ? "Unknown error."
+                        : message
+        );
 
         alert.showAndWait();
     }

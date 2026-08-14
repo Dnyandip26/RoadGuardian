@@ -129,15 +129,27 @@ public class DashboardDAO {
                 );
 
         // SOS
+       // SOS
+
         int sosRequests =
                 getCollectionCount(
-                        "sosRequests"
+                        "SOSRequests"
                 );
 
         int activeSOS =
                 getStatusCount(
-                        "sosRequests",
-                        "Active"
+                        "SOSRequests",
+                        "Pending"
+                )
+                +
+                getStatusCount(
+                        "SOSRequests",
+                        "Accepted"
+                )
+                +
+                getStatusCount(
+                        "SOSRequests",
+                        "In Progress"
                 );
 
         statistics.put(
