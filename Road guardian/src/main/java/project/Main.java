@@ -1,50 +1,90 @@
+//package project;
+//
+//import project.app.RoadGuardianApp;
+//import project.ui.admin.DashBoard.AdminDashboard;
+//import javafx.application.Application;
+//import javafx.scene.Scene;
+//import javafx.stage.Stage;
+//
+//// public class Main {
+////     public static void main(String[] args) {
+////         System.out.println("Hello world!");
+////         Application.launch(RoadGuardianApp.class,args);
+////     }
+//// }
+//// import javafx.application.Application;
+//// import javafx.scene.Scene;
+//// import javafx.stage.Stage;
+//// import project.ui.admin.AdminDashboard;
+//
+//public class Main extends Application {
+//
+//    @Override
+//    public void start(Stage stage) {
+//
+//        AdminDashboard dashboard =
+//                new AdminDashboard(stage);
+//
+//        Scene scene =
+//                new Scene(
+//                        dashboard.getView(),
+//                        1450,
+//                        850
+//                );
+//
+//        stage.setTitle(
+//                "RoadGuardian - Admin Panel"
+//        );
+//
+//        stage.setScene(scene);
+//
+//        stage.setMinWidth(1100);
+//        stage.setMinHeight(700);
+//
+//        stage.show();
+//    }
+//
+//    public static void main(String[] args) {
+//        launch(args);
+//    }
+//}
+
 package project;
 
-import project.app.RoadGuardianApp;
-import project.ui.admin.DashBoard.AdminDashboard;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
-
-// public class Main {
-//     public static void main(String[] args) {
-//         System.out.println("Hello world!");
-//         Application.launch(RoadGuardianApp.class,args);
-//     }
-// }
-// import javafx.application.Application;
-// import javafx.scene.Scene;
-// import javafx.stage.Stage;
-// import project.ui.admin.AdminDashboard;
+import project.ui.landing.LandingPage;
 
 public class Main extends Application {
 
     @Override
     public void start(Stage stage) {
 
-        AdminDashboard dashboard =
-                new AdminDashboard(stage);
+        LandingPage landingPage =
+                new LandingPage(stage);
 
         Scene scene =
                 new Scene(
-                        dashboard.getView(),
-                        1450,
-                        850
+                        landingPage.getView(),
+                        1400,
+                        800
                 );
 
         stage.setTitle(
-                "RoadGuardian - Admin Panel"
+                "RoadGuardian"
         );
 
         stage.setScene(scene);
 
-        stage.setMinWidth(1100);
-        stage.setMinHeight(700);
+        stage.setMinWidth(1200);
+        stage.setMinHeight(750);
 
         stage.show();
     }
-    
+
     public static void main(String[] args) {
+
         launch(args);
     }
 }
