@@ -13,6 +13,7 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
+import project.ui.landing.LandingPage;
 import project.util.Theme;
 
 public class MechanicDashboard {
@@ -52,7 +53,7 @@ public class MechanicDashboard {
 
         showDashboard();
 
-        return new Scene(root, 1280, 760);
+        return new Scene(root, LandingPage.appMainStage.getWidth(), LandingPage.appMainStage.getHeight());
     }
 
     // =========================
