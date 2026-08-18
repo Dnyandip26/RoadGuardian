@@ -1,5 +1,6 @@
 package project.ui.user;
 
+import project.app.AppNavigator;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -18,6 +19,7 @@ import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
+import project.ui.user.UserHeader;
 import javafx.stage.Stage;
 
 public class SOSPage {
@@ -65,8 +67,8 @@ public class SOSPage {
                 root.setStyle(
                                 "-fx-background-color: " + MAIN_BACKGROUND + ";");
 
-                HBox header = createHeader();
-                ScrollPane sidebar = createSidebar();
+                HBox header = UserHeader.createHeader();
+                ScrollPane sidebar = UserSideBar.createSidebar("Emergency SOS");
 
                 VBox content = createSOSContent();
 
@@ -90,454 +92,29 @@ public class SOSPage {
                 root.setLeft(sidebar);
                 root.setCenter(contentScroll);
 
-                sosScene = new Scene(
-                                root,
-                                1600,
-                                900);
+                sosScene = new Scene(root,UserDashboard.dashboardStage.getWidth(), UserDashboard.dashboardStage.getHeight());
 
                 addScrollbarStyle(sosScene);
 
                 return sosScene;
         }
 
-        // ============================================================
-        // HEADER
-        // ============================================================
+        
 
-        private HBox createHeader() {
 
-                HBox header = new HBox(15);
 
-                header.setAlignment(Pos.CENTER_LEFT);
-                header.setPadding(
-                                new Insets(10, 28, 10, 28));
-                header.setPrefHeight(76);
 
-                header.setStyle(
-                                "-fx-background-color: " + MAIN_BACKGROUND + ";" +
-                                                "-fx-border-color: " + BORDER + ";" +
-                                                "-fx-border-width: 0 0 1 0;");
 
-                StackPane logo = new StackPane();
 
-                Circle logoCircle = new Circle(21);
-                logoCircle.setFill(Color.web(NAV_BLUE));
 
-                Label shield = new Label("✓");
-                shield.setTextFill(Color.WHITE);
-                shield.setFont(
-                                Font.font(
-                                                "Arial",
-                                                FontWeight.BOLD,
-                                                20));
 
-                logo.getChildren().addAll(
-                                logoCircle,
-                                shield);
 
-                HBox brand = new HBox(0);
-                brand.setAlignment(Pos.CENTER_LEFT);
-
-                Label road = new Label("Road");
-                road.setFont(
-                                Font.font(
-                                                "Arial",
-                                                FontWeight.BOLD,
-                                                21));
-                road.setTextFill(Color.web(HEADING));
-
-                Label guardian = new Label("Guardian");
-                guardian.setFont(
-                                Font.font(
-                                                "Arial",
-                                                FontWeight.BOLD,
-                                                21));
-                guardian.setTextFill(Color.web(NAV_BLUE));
-
-                brand.getChildren().addAll(
-                                road,
-                                guardian);
-
-                HBox logoSection = new HBox(
-                                11,
-                                logo,
-                                brand);
-
-                logoSection.setAlignment(Pos.CENTER_LEFT);
-
-                Region spacer = new Region();
-                HBox.setHgrow(
-                                spacer,
-                                Priority.ALWAYS);
-
-                HBox search = new HBox(9);
-
-                search.setAlignment(Pos.CENTER_LEFT);
-                search.setPrefWidth(420);
-                search.setMaxWidth(420);
-                search.setMinHeight(42);
-
-                search.setPadding(
-                                new Insets(0, 15, 0, 15));
-
-                search.setStyle(
-                                "-fx-background-color: white;" +
-                                                "-fx-border-color: " + BORDER + ";" +
-                                                "-fx-border-radius: 24;" +
-                                                "-fx-background-radius: 24;");
-
-                Label searchIcon = new Label("⌕");
-                searchIcon.setFont(
-                                Font.font("Arial", 24));
-                searchIcon.setTextFill(
-                                Color.web(SECONDARY_TEXT));
-
-                Label searchText = new Label(
-                                "Search mechanics, invoices, vehicles...");
-                searchText.setFont(Font.font(15));
-                searchText.setTextFill(
-                                Color.web(SECONDARY_TEXT));
-
-                search.getChildren().addAll(
-                                searchIcon,
-                                searchText);
-
-                StackPane notification = new StackPane();
-
-                Label bell = new Label("♧");
-                bell.setFont(
-                                Font.font("Arial", 22));
-                bell.setTextFill(Color.web(HEADING));
-
-                Circle dot = new Circle(
-                                4,
-                                Color.web(EMERGENCY));
-
-                StackPane.setAlignment(
-                                dot,
-                                Pos.TOP_RIGHT);
-
-                notification.getChildren().addAll(
-                                bell,
-                                dot);
-
-                HBox profile = new HBox(9);
-                profile.setAlignment(Pos.CENTER_LEFT);
-                profile.setPadding(
-                                new Insets(5, 12, 5, 6));
-
-                profile.setStyle(
-                                "-fx-background-color: white;" +
-                                                "-fx-border-color: " + BORDER + ";" +
-                                                "-fx-border-radius: 25;" +
-                                                "-fx-background-radius: 25;");
-
-                StackPane avatar = new StackPane();
-
-                Circle avatarCircle = new Circle(19);
-
-                avatarCircle.setFill(
-                                Color.web(SECONDARY_SURFACE));
-
-                Label initials = new Label("AN");
-                initials.setFont(
-                                Font.font(
-                                                "Arial",
-                                                FontWeight.BOLD,
-                                                13));
-                initials.setTextFill(
-                                Color.web(NAV_BLUE));
-
-                avatar.getChildren().addAll(
-                                avatarCircle,
-                                initials);
-
-                VBox profileText = new VBox(1);
-
-                Label name = new Label("Aarav Nair");
-                name.setFont(
-                                Font.font(
-                                                "Arial",
-                                                FontWeight.BOLD,
-                                                13));
-                name.setTextFill(
-                                Color.web(HEADING));
-
-                Label role = new Label("Customer · Pune");
-
-                role.setFont(Font.font(11));
-                role.setTextFill(
-                                Color.web(SECONDARY_TEXT));
-
-                profileText.getChildren().addAll(
-                                name,
-                                role);
-
-                profile.getChildren().addAll(
-                                avatar,
-                                profileText);
-
-                header.getChildren().addAll(
-                                logoSection,
-                                spacer,
-                                search,
-                                notification,
-                                profile);
-
-                return header;
-        }
-
+        
         // ============================================================
         // SIDEBAR
         // ============================================================
 
-        private ScrollPane createSidebar() {
-
-                VBox sidebarContent = new VBox(5);
-
-                sidebarContent.setPrefWidth(270);
-                sidebarContent.setMinWidth(270);
-
-                sidebarContent.setPadding(
-                                new Insets(
-                                                20,
-                                                12,
-                                                30,
-                                                12));
-
-                sidebarContent.setStyle(
-                                "-fx-background-color: " + SIDEBAR + ";");
-
-                addSection(
-                                sidebarContent,
-                                "OVERVIEW");
-
-                Button dashboardButton = createNavButton(
-                                "▦",
-                                "Dashboard",
-                                false);
-                dashboardButton.setOnAction(e -> {
-
-                        Stage stage = (Stage) dashboardButton
-                                        .getScene()
-                                        .getWindow();
-
-                        UserDashboard dashboard = new UserDashboard();
-
-                        stage.setTitle(
-                                        "RoadGuardian - Customer Dashboard");
-
-                        stage.setScene(
-                                        dashboard.getDashboardScene());
-
-                });
-
-                Button liveMapButton = createNavButton(
-                                "◇",
-                                "Live Map",
-                                false);
-
-                liveMapButton.setOnAction(e -> openLiveMapPage(liveMapButton));
-
-                sidebarContent.getChildren().addAll(
-                                dashboardButton,
-                                createNavButton(
-                                                "♧",
-                                                "Emergency SOS",
-                                                true),
-                                liveMapButton);
-
-                addSection(
-                                sidebarContent,
-                                "ASSISTANCE");
-
-                sidebarContent.getChildren().addAll(
-                                createNavButton(
-                                                "♧",
-                                                "AI Diagnosis",
-                                                false),
-                                createNavButton(
-                                                "⚒",
-                                                "Mechanics",
-                                                false),
-                                createNavButton(
-                                                "▱",
-                                                "Tow Truck",
-                                                false),
-                                createNavButton(
-                                                "▤",
-                                                "Cost Estimator",
-                                                false));
-
-                addSection(
-                                sidebarContent,
-                                "GARAGE");
-
-                sidebarContent.getChildren().addAll(
-                                createNavButton(
-                                                "▱",
-                                                "My Vehicles",
-                                                false),
-                                createNavButton(
-                                                "◷",
-                                                "Service History",
-                                                false),
-                                createNavButton(
-                                                "▧",
-                                                "Documents",
-                                                false));
-
-                addSection(
-                                sidebarContent,
-                                "ACCOUNT");
-
-                sidebarContent.getChildren().addAll(
-                                createNavButton(
-                                                "♙",
-                                                "Women Safety",
-                                                false),
-                                createNavButton(
-                                                "♧",
-                                                "Notifications",
-                                                false),
-                                createNavButton(
-                                                "⚙",
-                                                "Settings",
-                                                false));
-
-                ScrollPane scroll = new ScrollPane(sidebarContent);
-
-                scroll.setPrefWidth(270);
-                scroll.setMinWidth(270);
-                scroll.setMaxWidth(270);
-
-                scroll.setFitToWidth(true);
-
-                scroll.setHbarPolicy(
-                                ScrollPane.ScrollBarPolicy.NEVER);
-
-                scroll.setVbarPolicy(
-                                ScrollPane.ScrollBarPolicy.ALWAYS);
-
-                scroll.setPannable(true);
-
-                scroll.setStyle(
-                                "-fx-background-color: " + SIDEBAR + ";" +
-                                                "-fx-border-color: transparent;");
-
-                return scroll;
-        }
-
-        private void addSection(
-                        VBox parent,
-                        String text) {
-
-                Label label = new Label(text);
-
-                label.setPadding(
-                                new Insets(
-                                                11,
-                                                12,
-                                                7,
-                                                12));
-
-                label.setFont(
-                                Font.font(
-                                                "Arial",
-                                                FontWeight.BOLD,
-                                                12));
-
-                label.setTextFill(
-                                Color.web(SECONDARY_TEXT));
-
-                parent.getChildren().add(label);
-        }
-
-        private Button createNavButton(
-                        String icon,
-                        String text,
-                        boolean selected) {
-
-                Button button = new Button(
-                                icon + "    " + text);
-
-                button.setAlignment(
-                                Pos.CENTER_LEFT);
-
-                button.setMaxWidth(
-                                Double.MAX_VALUE);
-
-                button.setPrefHeight(44);
-
-                button.setPadding(
-                                new Insets(
-                                                0,
-                                                13,
-                                                0,
-                                                13));
-
-                button.setFont(
-                                Font.font(
-                                                "Arial",
-                                                selected
-                                                                ? FontWeight.BOLD
-                                                                : FontWeight.NORMAL,
-                                                15));
-
-                if (selected) {
-
-                        button.setStyle(
-                                        "-fx-background-color: " + NAV_BLUE + ";" +
-                                                        "-fx-text-fill: white;" +
-                                                        "-fx-background-radius: 24;");
-
-                } else {
-
-                        button.setStyle(
-                                        "-fx-background-color: transparent;" +
-                                                        "-fx-text-fill: " + HEADING + ";" +
-                                                        "-fx-background-radius: 24;");
-
-                        button.setOnMouseEntered(e -> button.setStyle(
-                                        "-fx-background-color: " + NAV_BLUE + ";" +
-                                                        "-fx-text-fill: white;" +
-                                                        "-fx-background-radius: 24;"));
-
-                        button.setOnMouseExited(e -> button.setStyle(
-                                        "-fx-background-color: transparent;" +
-                                                        "-fx-text-fill: " + HEADING + ";" +
-                                                        "-fx-background-radius: 24;"));
-                }
-
-                return button;
-        }
-
-        // ============================================================
-        // LIVE MAP NAVIGATION
-        // ============================================================
-
-        private void openLiveMapPage(Button sourceButton) {
-
-                try {
-
-                        LiveMapPage liveMapPage = new LiveMapPage();
-
-                        Stage stage = (Stage) sourceButton
-                                        .getScene()
-                                        .getWindow();
-
-                        stage.setTitle(
-                                        "RoadGuardian - Live Tracking");
-
-                        stage.setScene(
-                                        liveMapPage.getLiveMapScene());
-
-                } catch (Exception ex) {
-
-                        ex.printStackTrace();
-                }
-        }
-
+        
         // ============================================================
         // SOS CONTENT
         // ============================================================
