@@ -9,7 +9,7 @@ import com.google.firebase.cloud.FirestoreClient;
 import java.io.FileInputStream;
 import java.io.IOException;
 
-public class FirebaseConfig {
+public final class FirebaseConfig {
 
     private static Firestore firestore;
 
@@ -30,18 +30,25 @@ public class FirebaseConfig {
                             "guardian.json"
                     );
 
-            FirebaseOptions options =
-                    FirebaseOptions.builder()
-                            .setCredentials(
-                                    GoogleCredentials.fromStream(
-                                            serviceAccount
-                                    )
-                            )
-                            .build();
+            try {
 
-            FirebaseApp.initializeApp(
-                    options
-            );
+                FirebaseOptions options =
+                        FirebaseOptions.builder()
+                                .setCredentials(
+                                        GoogleCredentials.fromStream(
+                                                serviceAccount
+                                        )
+                                )
+                                .build();
+
+                FirebaseApp.initializeApp(
+                        options
+                );
+
+            } finally {
+
+                serviceAccount.close();
+            }
         }
 
         firestore =

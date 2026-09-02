@@ -39,6 +39,23 @@ public class ServiceRequestDAO {
 
         QuerySnapshot snapshot =
                 future.get();
+                System.out.println(
+        "FIRESTORE DOCUMENT COUNT = " +
+        snapshot.size()
+);
+
+        for (DocumentSnapshot document : snapshot.getDocuments()) {
+
+        System.out.println(
+                "DOCUMENT ID = " +
+                document.getId()
+        );
+
+        System.out.println(
+                "DOCUMENT DATA = " +
+                document.getData()
+        );
+        }
 
         for (
                 DocumentSnapshot document :

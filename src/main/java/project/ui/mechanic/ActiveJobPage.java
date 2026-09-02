@@ -1,5 +1,7 @@
 package project.ui.mechanic;
 
+import com.google.cloud.firestore.Firestore;
+
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Alert;
@@ -16,7 +18,13 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
+
+import project.controller.mechanic.RequestsController;
+import project.firebase.FirebaseConfig;
+import project.model.ServiceRequest;
 import project.util.Theme;
+
+import java.time.Instant;
 
 public class ActiveJobPage {
 
@@ -24,11 +32,24 @@ public class ActiveJobPage {
     // CURRENT JOB DATA
     // =========================================================
 
-    private String customerName = "Dipak Mote";
-    private String vehicleName = "Toyota Innova";
-    private String problemName = "Engine Issue";
-    private String jobDistance = "0 km";
-    private String estimatedAmount = "₹0";
+    private String currentRequestId = "";
+    private String customerName = "";
+    private String vehicleName = "";
+    private String problemName = "";
+    private String jobDistance = "";
+    private String estimatedAmount = "";
+
+    // =========================================================
+    // CURRENT JOB
+    // =========================================================
+
+    private ServiceRequest currentJob;
+
+    // =========================================================
+    // CONTROLLER
+    // =========================================================
+
+    private RequestsController controller;
 
     // =========================================================
     // UI COMPONENTS
@@ -62,6 +83,33 @@ public class ActiveJobPage {
 
     private boolean repairStarted = false;
     private boolean jobCompleted = false;
+
+    // =========================================================
+    // CONSTRUCTOR
+    // =========================================================
+
+    public ActiveJobPage() {
+
+        try {
+
+            Firestore firestore =
+                    FirebaseConfig.getFirestore();
+
+            controller =
+                    new RequestsController(
+                            firestore
+                    );
+
+        } catch (Exception e) {
+
+            e.printStackTrace();
+
+            throw new RuntimeException(
+                    "Unable to initialize Firebase",
+                    e
+            );
+        }
+    }
 
     // =========================================================
     // GET CONTENT
@@ -1182,7 +1230,43 @@ public class ActiveJobPage {
 
     private void startRepair() {
 
+        if (
+                currentRequestId == null ||
+                currentRequestId.isBlank()
+        ) {
+
+            showAlert(
+                    "No Active Job",
+                    "No active service request is selected."
+            );
+
+            return;
+        }
+
+        boolean updated =
+                controller.updateStatus(
+                        currentRequestId,
+                        "In Progress"
+                );
+
+        if (!updated) {
+
+            showAlert(
+                    "Update Failed",
+                    "Unable to start the repair. Please try again."
+            );
+
+            return;
+        }
+
         repairStarted = true;
+
+        if (currentJob != null) {
+
+            currentJob.setStatus(
+                    "In Progress"
+            );
+        }
 
         jobStatus.setText(
                 "Repair In Progress"
@@ -1320,6 +1404,10 @@ public class ActiveJobPage {
 
     private void completeJob() {
 
+        // -----------------------------------------------------
+        // 1. Repair must be started
+        // -----------------------------------------------------
+
         if (!repairStarted) {
 
             showAlert(
@@ -1330,11 +1418,17 @@ public class ActiveJobPage {
             return;
         }
 
-        if (diagnosisField == null ||
+        // -----------------------------------------------------
+        // 2. Diagnosis validation
+        // -----------------------------------------------------
+
+        if (
+                diagnosisField == null ||
                 diagnosisField
                         .getText()
                         .trim()
-                        .isEmpty()) {
+                        .isEmpty()
+        ) {
 
             showAlert(
                     "Diagnosis Required",
@@ -1346,11 +1440,17 @@ public class ActiveJobPage {
             return;
         }
 
-        if (repairField == null ||
+        // -----------------------------------------------------
+        // 3. Repair details validation
+        // -----------------------------------------------------
+
+        if (
+                repairField == null ||
                 repairField
                         .getText()
                         .trim()
-                        .isEmpty()) {
+                        .isEmpty()
+        ) {
 
             showAlert(
                     "Repair Details Required",
@@ -1361,6 +1461,167 @@ public class ActiveJobPage {
 
             return;
         }
+
+        // -----------------------------------------------------
+        // 4. Request ID validation
+        // -----------------------------------------------------
+
+        if (
+                currentRequestId == null ||
+                currentRequestId.isBlank()
+        ) {
+
+            showAlert(
+                    "No Active Job",
+                    "No active service request is selected."
+            );
+
+            return;
+        }
+
+        // -----------------------------------------------------
+        // 5. Controller validation
+        // -----------------------------------------------------
+
+        if (controller == null) {
+
+            showAlert(
+                    "System Error",
+                    "Firebase controller is not initialized."
+            );
+
+            return;
+        }
+
+        // -----------------------------------------------------
+        // 6. Read costs
+        // -----------------------------------------------------
+
+        double partsCost =
+                parseAmount(
+                        partsCostField
+                );
+
+        double labourCost =
+                parseAmount(
+                        labourCostField
+                );
+
+        double totalAmount =
+                partsCost +
+                labourCost;
+
+        // -----------------------------------------------------
+        // 7. Read diagnosis and repair
+        // -----------------------------------------------------
+
+        String diagnosis =
+                diagnosisField
+                        .getText()
+                        .trim();
+
+        String repairDetails =
+                repairField
+                        .getText()
+                        .trim();
+
+        // -----------------------------------------------------
+        // 8. Completion date
+        // -----------------------------------------------------
+
+        String completedDate =
+                String.valueOf(
+                        Instant.now()
+                                .toEpochMilli()
+                );
+
+        // -----------------------------------------------------
+        // 9. Disable button while saving
+        // -----------------------------------------------------
+
+        completeJobButton.setDisable(
+                true
+        );
+
+        completeJobButton.setText(
+                "Completing..."
+        );
+
+        // -----------------------------------------------------
+        // 10. SAVE TO FIREBASE
+        // -----------------------------------------------------
+
+        boolean completed =
+                controller.completeJob(
+                        currentRequestId,
+                        diagnosis,
+                        repairDetails,
+                        partsCost,
+                        labourCost,
+                        totalAmount,
+                        completedDate
+                );
+
+        // -----------------------------------------------------
+        // 11. Firebase update failed
+        // -----------------------------------------------------
+
+        if (!completed) {
+
+            completeJobButton.setDisable(
+                    false
+            );
+
+            completeJobButton.setText(
+                    "Complete Job"
+            );
+
+            showAlert(
+                    "Completion Failed",
+                    "Unable to complete the service. Please try again."
+            );
+
+            return;
+        }
+
+        // -----------------------------------------------------
+        // 12. Update local object
+        // -----------------------------------------------------
+
+        if (currentJob != null) {
+
+            currentJob.setDiagnosis(
+                    diagnosis
+            );
+
+            currentJob.setRepairDetails(
+                    repairDetails
+            );
+
+            currentJob.setPartsCost(
+                    partsCost
+            );
+
+            currentJob.setLabourCost(
+                    labourCost
+            );
+
+            currentJob.setTotalAmount(
+                    totalAmount
+            );
+
+            currentJob.setCompletedDate(
+                    completedDate
+            );
+
+            currentJob.setStatus(
+                    "Completed"
+            );
+        }
+
+        // -----------------------------------------------------
+        // 13. Update UI
+        // -----------------------------------------------------
 
         jobCompleted = true;
 
@@ -1399,6 +1660,10 @@ public class ActiveJobPage {
                 "-fx-font-size: 11px;" +
                 "-fx-font-weight: bold;"
         );
+
+        // -----------------------------------------------------
+        // 14. Success message
+        // -----------------------------------------------------
 
         showAlert(
                 "Job Completed",
@@ -1442,28 +1707,53 @@ public class ActiveJobPage {
     // =========================================================
 
     public void setJob(
-            String customer,
-            String vehicle,
-            String problem,
-            String type,
-            String distance,
-            String amount
+            ServiceRequest request
     ) {
 
+        if (request == null) {
+            return;
+        }
+
+        // -----------------------------------------------------
+        // Store current job
+        // -----------------------------------------------------
+
+        this.currentJob =
+                request;
+
+        this.currentRequestId =
+                request.getRequestId();
+
         this.customerName =
-                customer;
+                safe(
+                        request.getCustomerName()
+                );
 
         this.vehicleName =
-                vehicle;
+                safe(
+                        request.getVehicleNumber()
+                );
 
         this.problemName =
-                problem;
+                safe(
+                        request.getDescription()
+                );
 
         this.jobDistance =
-                distance;
+                safe(
+                        request.getLocation()
+                );
 
         this.estimatedAmount =
-                amount;
+                "₹" +
+                String.format(
+                        "%.0f",
+                        request.getTotalAmount()
+                );
+
+        // -----------------------------------------------------
+        // Update summary
+        // -----------------------------------------------------
 
         if (customerValueLabel != null) {
 
@@ -1500,103 +1790,254 @@ public class ActiveJobPage {
             );
         }
 
-        repairStarted = false;
-        jobCompleted = false;
+        // -----------------------------------------------------
+        // Reset state according to current Firebase status
+        // -----------------------------------------------------
 
-        if (jobStatus != null) {
+        String status =
+                safe(
+                        request.getStatus()
+                );
 
-            jobStatus.setText(
-                    "Job Accepted"
-            );
+        if (
+                "Completed"
+                        .equalsIgnoreCase(
+                                status
+                        )
+        ) {
 
-            jobStatus.setStyle(
-                    "-fx-font-size: 12px;" +
-                    "-fx-font-weight: bold;" +
-                    "-fx-text-fill: " +
-                    Theme.INFO +
-                    ";"
-            );
+            repairStarted = true;
+            jobCompleted = true;
+
+            if (jobStatus != null) {
+
+                jobStatus.setText(
+                        "Job Completed"
+                );
+
+                jobStatus.setStyle(
+                        "-fx-font-size: 12px;" +
+                        "-fx-font-weight: bold;" +
+                        "-fx-text-fill: " +
+                        Theme.SUCCESS +
+                        ";"
+                );
+            }
+
+            if (progressText != null) {
+
+                progressText.setText(
+                        "Service completed successfully."
+                );
+            }
+
+            if (startRepairButton != null) {
+
+                startRepairButton.setText(
+                        "Repair Completed"
+                );
+
+                startRepairButton.setDisable(
+                        true
+                );
+            }
+
+            if (completeJobButton != null) {
+
+                completeJobButton.setText(
+                        "✓ Job Completed"
+                );
+
+                completeJobButton.setDisable(
+                        true
+                );
+            }
+
+        } else if (
+                "In Progress"
+                        .equalsIgnoreCase(
+                                status
+                        )
+        ) {
+
+            repairStarted = true;
+            jobCompleted = false;
+
+            if (jobStatus != null) {
+
+                jobStatus.setText(
+                        "Repair In Progress"
+                );
+
+                jobStatus.setStyle(
+                        "-fx-font-size: 12px;" +
+                        "-fx-font-weight: bold;" +
+                        "-fx-text-fill: " +
+                        Theme.PRIMARY +
+                        ";"
+                );
+            }
+
+            if (progressText != null) {
+
+                progressText.setText(
+                        "Vehicle repair is currently in progress."
+                );
+            }
+
+            if (startRepairButton != null) {
+
+                startRepairButton.setText(
+                        "Repair In Progress"
+                );
+
+                startRepairButton.setDisable(
+                        true
+                );
+            }
+
+            if (completeJobButton != null) {
+
+                completeJobButton.setText(
+                        "Complete Job"
+                );
+
+                completeJobButton.setDisable(
+                        false
+                );
+            }
+
+        } else {
+
+            repairStarted = false;
+            jobCompleted = false;
+
+            if (jobStatus != null) {
+
+                jobStatus.setText(
+                        "Job Accepted"
+                );
+
+                jobStatus.setStyle(
+                        "-fx-font-size: 12px;" +
+                        "-fx-font-weight: bold;" +
+                        "-fx-text-fill: " +
+                        Theme.INFO +
+                        ";"
+                );
+            }
+
+            if (progressText != null) {
+
+                progressText.setText(
+                        "Request accepted. Ready to start repair."
+                );
+            }
+
+            if (startRepairButton != null) {
+
+                startRepairButton.setText(
+                        "Start Repair"
+                );
+
+                startRepairButton.setDisable(
+                        false
+                );
+            }
+
+            if (completeJobButton != null) {
+
+                completeJobButton.setText(
+                        "Complete Job"
+                );
+
+                completeJobButton.setDisable(
+                        false
+                );
+            }
         }
 
-        if (progressText != null) {
-
-            progressText.setText(
-                    "Request accepted. Ready to start repair."
-            );
-        }
-
-        if (startRepairButton != null) {
-
-            startRepairButton.setText(
-                    "Start Repair"
-            );
-
-            startRepairButton.setDisable(
-                    false
-            );
-
-            startRepairButton.setStyle(
-                    "-fx-background-color: " +
-                    Theme.PRIMARY +
-                    ";" +
-                    "-fx-text-fill: " +
-                    Theme.WHITE +
-                    ";" +
-                    "-fx-background-radius: 8;" +
-                    "-fx-font-size: 11px;" +
-                    "-fx-font-weight: bold;" +
-                    "-fx-cursor: hand;"
-            );
-        }
-
-        if (completeJobButton != null) {
-
-            completeJobButton.setText(
-                    "Complete Job"
-            );
-
-            completeJobButton.setDisable(
-                    false
-            );
-
-            completeJobButton.setStyle(
-                    "-fx-background-color: " +
-                    Theme.SUCCESS +
-                    ";" +
-                    "-fx-text-fill: " +
-                    Theme.WHITE +
-                    ";" +
-                    "-fx-background-radius: 8;" +
-                    "-fx-font-size: 11px;" +
-                    "-fx-font-weight: bold;" +
-                    "-fx-cursor: hand;"
-            );
-        }
+        // -----------------------------------------------------
+        // Existing diagnosis
+        // -----------------------------------------------------
 
         if (diagnosisField != null) {
 
-            diagnosisField.clear();
+            String diagnosis =
+                    request.getDiagnosis();
+
+            diagnosisField.setText(
+                    diagnosis == null
+                            ? ""
+                            : diagnosis
+            );
         }
+
+        // -----------------------------------------------------
+        // Existing repair details
+        // -----------------------------------------------------
 
         if (repairField != null) {
 
-            repairField.clear();
+            String repairDetails =
+                    request.getRepairDetails();
+
+            repairField.setText(
+                    repairDetails == null
+                            ? ""
+                            : repairDetails
+            );
         }
+
+        // -----------------------------------------------------
+        // Existing parts cost
+        // -----------------------------------------------------
 
         if (partsCostField != null) {
 
             partsCostField.setText(
-                    "0"
+                    String.valueOf(
+                            request.getPartsCost()
+                    )
             );
         }
+
+        // -----------------------------------------------------
+        // Existing labour cost
+        // -----------------------------------------------------
 
         if (labourCostField != null) {
 
             labourCostField.setText(
-                    "0"
+                    String.valueOf(
+                            request.getLabourCost()
+                    )
             );
         }
 
+        // -----------------------------------------------------
+        // Update total
+        // -----------------------------------------------------
+
         updateTotal();
+    }
+
+    // =========================================================
+    // SAFE STRING
+    // =========================================================
+
+    private String safe(
+            String value
+    ) {
+
+        if (
+                value == null ||
+                value.isBlank()
+        ) {
+
+            return "-";
+        }
+
+        return value;
     }
 }
