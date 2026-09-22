@@ -7,14 +7,10 @@ target/
 .vscode/
 
 # Firebase / secrets
-guardian.json
 *.pem
 .env
 serviceAccount*.json
 firebase-adminsdk*.json
 
-# Local files
+# Local backup
 *.local
-
-# Temporary files
-cp.txt
